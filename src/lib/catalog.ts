@@ -60,6 +60,24 @@ export const WORK_ORDER_STATUS_LABELS: Record<WorkOrderStatus, string> = {
   canceled: "Cancelado",
 };
 
+/** SKU sugerido a partir del nombre del producto — ej. "Camiseta Halloween Jason" -> "CAM-HAL-JAS". */
+export function generateSkuFromName(name: string): string {
+  const words = name
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9\s]/g, "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  if (words.length === 0) return "";
+  return words
+    .slice(0, 3)
+    .map((w) => w.slice(0, 3))
+    .join("-");
+}
+
 export function customerFullName(customer: Pick<Customer, "first_name" | "last_name">) {
   return [customer.first_name, customer.last_name].filter(Boolean).join(" ");
 }

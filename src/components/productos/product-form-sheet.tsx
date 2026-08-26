@@ -33,7 +33,7 @@ import {
   type ProductInput,
 } from "@/app/(app)/productos/actions";
 import { uploadCompanyFile } from "@/lib/storage";
-import { UNIT_LABELS } from "@/lib/catalog";
+import { UNIT_LABELS, generateSkuFromName } from "@/lib/catalog";
 import type { Product, ProductCategory, ProductUnit } from "@/types/database";
 
 const UNITS = Object.keys(UNIT_LABELS) as ProductUnit[];
@@ -94,9 +94,23 @@ export function ProductFormSheet({
   const [errors, setErrors] = React.useState<Partial<Record<"name" | "price", string>>>({});
   const [saving, setSaving] = React.useState(false);
   const [uploading, setUploading] = React.useState(false);
+  const skuTouchedRef = React.useRef(Boolean(product?.sku));
 
   function patch<K extends keyof ProductInput>(key: K, value: ProductInput[K]) {
     setValues((v) => ({ ...v, [key]: value }));
+  }
+
+  function handleNameChange(name: string) {
+    setValues((v) => ({
+      ...v,
+      name,
+      sku: skuTouchedRef.current ? v.sku : generateSkuFromName(name),
+    }));
+  }
+
+  function handleSkuChange(sku: string) {
+    skuTouchedRef.current = true;
+    patch("sku", sku);
   }
 
   async function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -200,7 +214,7 @@ export function ProductFormSheet({
                 id="productName"
                 autoFocus
                 value={values.name}
-                onChange={(e) => patch("name", e.target.value)}
+                onChange={(e) => handleNameChange(e.target.value)}
                 aria-invalid={Boolean(errors.name)}
               />
               {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
@@ -298,7 +312,8 @@ export function ProductFormSheet({
                 <Input
                   id="productSku"
                   value={values.sku}
-                  onChange={(e) => patch("sku", e.target.value)}
+                  onChange={(e) => handleSkuChange(e.target.value)}
+                  placeholder="Se genera solo desde el nombre"
                 />
               </div>
             </div>
