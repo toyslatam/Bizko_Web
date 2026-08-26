@@ -8,10 +8,11 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
 import { ListToolbar } from "@/components/catalog/list-toolbar";
 import { InventoryList } from "@/components/inventario/inventory-list";
+import { VariantInventoryList } from "@/components/inventario/variant-inventory-list";
 import { MovementDialog } from "@/components/inventario/movement-dialog";
 import { can } from "@/lib/permissions";
 import { stockStatus } from "@/lib/inventory";
-import type { Product, ProductCategory } from "@/types/database";
+import type { Product, ProductCategory, ProductVariant } from "@/types/database";
 
 interface PageProps {
   searchParams: Promise<{ q?: string; status?: string; category?: string }>;
@@ -26,7 +27,7 @@ export default async function InventarioPage({ searchParams }: PageProps) {
   const supabase = await createClient();
   const companyId = session.activeCompany.id;
 
-  const [{ data: categories }, { data: productsData }] = await Promise.all([
+  const [{ data: categories }, { data: productsData }, { data: variantProductsData }] = await Promise.all([
     supabase.from("product_categories").select("*").eq("company_id", companyId).order("name"),
     supabase
       .from("products")
@@ -34,10 +35,18 @@ export default async function InventarioPage({ searchParams }: PageProps) {
       .eq("company_id", companyId)
       .eq("track_inventory", true)
       .order("name"),
+    supabase
+      .from("products")
+      .select("*, product_variants(*)")
+      .eq("company_id", companyId)
+      .eq("has_variants", true)
+      .order("name"),
   ]);
 
   const categoriesById = new Map((categories as ProductCategory[] | null ?? []).map((c) => [c.id, c]));
   let products = (productsData as Product[] | null) ?? [];
+  const variantProducts =
+    (variantProductsData as (Product & { product_variants: ProductVariant[] })[] | null) ?? [];
 
   if (category) products = products.filter((p) => p.category_id === category);
   if (q) {
@@ -117,7 +126,7 @@ export default async function InventarioPage({ searchParams }: PageProps) {
             />
           )}
         </div>
-      ) : (
+      ) : variantProducts.length === 0 ? (
         <EmptyState
           icon={Boxes}
           title="Todavía no tienes productos con inventario"
@@ -128,6 +137,16 @@ export default async function InventarioPage({ searchParams }: PageProps) {
             </Button>
           }
         />
+      ) : null}
+
+      {variantProducts.length > 0 && (
+        <div className="mt-8 space-y-4">
+          <h2 className="font-heading text-lg font-semibold text-foreground">Productos con variantes</h2>
+          <p className="-mt-2 text-sm text-muted-foreground">
+            Su stock se controla por variante (talla, color, etc.) — edítalo desde cada producto.
+          </p>
+          <VariantInventoryList products={variantProducts} categoriesById={categoriesById} />
+        </div>
       )}
     </div>
   );
