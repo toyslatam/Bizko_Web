@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { ChevronRight, Package, Plus, Star } from "lucide-react";
 import { useCart } from "@/components/store/cart-context";
 import { ProductQuickView } from "@/components/store/product-quick-view";
+import { FavoriteButton } from "@/components/store/favorite-button";
 import { formatCurrencyCents } from "@/lib/format";
 import { UNIT_SHORT_LABELS } from "@/lib/catalog";
 import type { PublicProduct } from "@/types/database";
@@ -69,6 +70,7 @@ export function ProductCard({ slug, product }: { slug: string; product: PublicPr
               <Star className="size-3 fill-current" /> Destacado
             </span>
           )}
+          <FavoriteButton slug={slug} productId={product.id} className="absolute top-2 right-2" />
         </div>
         <div className="flex flex-1 flex-col gap-1 p-3">
           <p className="line-clamp-2 text-sm font-medium text-foreground">{product.name}</p>

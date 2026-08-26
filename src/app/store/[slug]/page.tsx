@@ -4,13 +4,13 @@ import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { EmptyState } from "@/components/ui/empty-state";
 import { CategoryFilter } from "@/components/store/category-filter";
-import { SearchBar } from "@/components/store/search-bar";
+import { SortDropdown } from "@/components/store/sort-dropdown";
 import { ProductCard } from "@/components/store/product-card";
 import type { PublicCategory, PublicCompany, PublicProduct } from "@/types/database";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ categoria?: string; buscar?: string }>;
+  searchParams: Promise<{ categoria?: string; buscar?: string; disponible?: string; orden?: string }>;
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -36,7 +36,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function PublicStorePage({ params, searchParams }: PageProps) {
   const { slug } = await params;
-  const { categoria, buscar } = await searchParams;
+  const { categoria, buscar, disponible, orden } = await searchParams;
   const supabase = await createClient();
 
   const { data: companyData } = await supabase.rpc("get_public_company", { p_slug: slug }).maybeSingle();
@@ -53,22 +53,24 @@ export default async function PublicStorePage({ params, searchParams }: PageProp
   ]);
 
   const categories = (categoriesData as PublicCategory[]) ?? [];
-  const products = (productsData as PublicProduct[]) ?? [];
-  const isFiltering = Boolean(categoria || buscar);
+  let products = (productsData as PublicProduct[]) ?? [];
+
+  const onlyAvailable = disponible === "1";
+  if (onlyAvailable) {
+    products = products.filter((p) => !(p.track_inventory && p.current_stock <= 0));
+  }
+  if (orden === "precio_asc") {
+    products = [...products].sort((a, b) => a.price_cents - b.price_cents);
+  } else if (orden === "precio_desc") {
+    products = [...products].sort((a, b) => b.price_cents - a.price_cents);
+  }
+
+  const isFiltering = Boolean(categoria || buscar || onlyAvailable);
   const featured = !isFiltering ? products.filter((p) => p.is_featured) : [];
 
   return (
     <div className="space-y-5">
-      <div className="space-y-3 sm:flex sm:items-center sm:justify-between sm:gap-4 sm:space-y-0">
-        <div className="sm:max-w-xs sm:flex-1">
-          <SearchBar />
-        </div>
-        {categories.length > 0 && (
-          <div className="sm:flex-1">
-            <CategoryFilter categories={categories} />
-          </div>
-        )}
-      </div>
+      {categories.length > 0 && <CategoryFilter categories={categories} />}
 
       {featured.length > 0 && (
         <div className="space-y-2">
@@ -90,6 +92,12 @@ export default async function PublicStorePage({ params, searchParams }: PageProp
             title={`No encontramos productos para «${buscar}»`}
             description="Prueba con otra palabra o revisa las categorías disponibles."
           />
+        ) : onlyAvailable ? (
+          <EmptyState
+            icon={PackageSearch}
+            title="No hay productos disponibles en este momento"
+            description="Quita el filtro «Disponibles» para ver todo el catálogo."
+          />
         ) : (
           <EmptyState
             icon={PackageSearch}
@@ -98,11 +106,17 @@ export default async function PublicStorePage({ params, searchParams }: PageProp
           />
         )
       ) : (
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 lg:gap-6 xl:grid-cols-4">
-          {products.map((p) => (
-            <ProductCard key={p.id} slug={slug} product={p} />
-          ))}
-        </div>
+        <>
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="font-heading text-base font-semibold text-foreground">Nuestra colección</h2>
+            <SortDropdown />
+          </div>
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 lg:gap-6 xl:grid-cols-4">
+            {products.map((p) => (
+              <ProductCard key={p.id} slug={slug} product={p} />
+            ))}
+          </div>
+        </>
       )}
     </div>
   );

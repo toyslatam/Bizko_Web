@@ -2,14 +2,16 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { headers } from "next/headers";
-import { MapPin, Phone, Clock } from "lucide-react";
+import { MapPin, Phone, Clock, Truck, Store as StoreIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { CartProvider } from "@/components/store/cart-context";
 import { CartButton } from "@/components/store/cart-button";
 import { ShareButton } from "@/components/store/share-button";
+import { SearchBar } from "@/components/store/search-bar";
+import { StoreNav } from "@/components/store/store-nav";
 import { StickyCartBar } from "@/components/store/sticky-cart-bar";
 import { getBusinessModule } from "@/modules/registry";
-import type { PublicCompany } from "@/types/database";
+import type { PublicCategory, PublicCompany } from "@/types/database";
 
 export default async function StoreLayout({
   children,
@@ -23,6 +25,9 @@ export default async function StoreLayout({
   const { data } = await supabase.rpc("get_public_company", { p_slug: slug }).maybeSingle();
   const company = data as PublicCompany | null;
   if (!company) notFound();
+
+  const { data: categoriesData } = await supabase.rpc("list_public_categories", { p_company_id: company.id });
+  const categories = (categoriesData as PublicCategory[]) ?? [];
 
   const businessModule = getBusinessModule(company.business_type);
   const headerList = await headers();
@@ -41,8 +46,25 @@ export default async function StoreLayout({
     <CartProvider slug={company.slug}>
       <div className="min-h-dvh bg-background" style={accentStyle}>
         <header className="bg-sidebar text-white">
-          <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-2.5 lg:px-10">
-            <Link href={`/store/${company.slug}`} className="flex items-center gap-2">
+          {(company.delivery_enabled || company.pickup_enabled) && (
+            <div className="border-b border-white/10 bg-black/10">
+              <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-center gap-x-4 gap-y-0.5 px-4 py-1 text-center text-[11px] text-white/70 lg:justify-end lg:px-10">
+                {company.delivery_enabled && (
+                  <span className="flex items-center gap-1">
+                    <Truck className="size-3" /> Envíos disponibles
+                  </span>
+                )}
+                {company.pickup_enabled && (
+                  <span className="flex items-center gap-1">
+                    <StoreIcon className="size-3" /> Recoge en tienda
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+
+          <div className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2.5 lg:flex-nowrap lg:px-10">
+            <Link href={`/store/${company.slug}`} className="flex shrink-0 items-center gap-2">
               {company.logo_url ? (
                 <Image
                   src={company.logo_url}
@@ -56,7 +78,12 @@ export default async function StoreLayout({
               )}
               <span className="font-heading text-sm font-semibold leading-tight">{company.name}</span>
             </Link>
-            <div className="flex items-center gap-1">
+
+            <div className="order-3 w-full lg:order-none lg:max-w-md lg:flex-1">
+              <SearchBar />
+            </div>
+
+            <div className="ml-auto flex shrink-0 items-center gap-1">
               <ShareButton title={`Compra en ${company.name}`} url={shareUrl} />
               <CartButton slug={company.slug} />
             </div>
@@ -86,6 +113,8 @@ export default async function StoreLayout({
             </div>
           )}
         </header>
+
+        <StoreNav slug={company.slug} categories={categories} />
 
         {company.banner_url && (
           <div className="mx-auto max-w-[1600px] px-4 pt-4 lg:px-10">
