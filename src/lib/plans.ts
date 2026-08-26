@@ -36,6 +36,8 @@ export const PLAN_LIMIT_LABELS: Record<PlanLimitKey, string> = {
   max_storage_mb: "Almacenamiento",
   max_ai_queries_month: "Consultas IA este mes",
   max_automations_active: "Automatizaciones activas",
+  max_leads: "Leads",
+  max_marketing_credits_month: "Créditos de marketing este mes",
 };
 
 export function formatLimitValue(limitKey: PlanLimitKey, value: number | null): string {

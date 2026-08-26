@@ -4,16 +4,27 @@ import { ArrowLeft, Mail, MapPin, Phone, Receipt, ShoppingCart, ClipboardList, H
 import { createClient } from "@/lib/supabase/server";
 import { getSessionContext } from "@/lib/auth/session";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EmptyState } from "@/components/ui/empty-state";
 import { StatCard } from "@/components/ui/stat-card";
 import { StatusBadge } from "@/components/catalog/status-badge";
 import { ToggleStatusButton } from "@/components/catalog/toggle-status-button";
 import { CustomerFormSheet } from "@/components/clientes/customer-form-sheet";
+import { CrmTaskList } from "@/components/crm/crm-task-list";
+import { CrmNoteList } from "@/components/crm/crm-note-list";
+import { CrmTagPicker } from "@/components/crm/crm-tag-picker";
 import { setCustomerStatusAction } from "@/app/(app)/clientes/actions";
 import { customerFullName, customerInitials } from "@/lib/catalog";
 import { formatCurrencyCents } from "@/lib/format";
-import type { Customer } from "@/types/database";
+import { LEAD_SOURCE_LABELS } from "@/lib/crm";
+import type {
+  Customer,
+  CustomerCrmSummary,
+  CrmNote,
+  CrmTag,
+  CrmTask,
+} from "@/types/database";
 
 export default async function CustomerDetailPage({
   params,
@@ -29,6 +40,28 @@ export default async function CustomerDetailPage({
   const { data } = await supabase.from("customers").select("*").eq("id", id).maybeSingle();
   const customer = data as Customer | null;
   if (!customer) notFound();
+
+  const [
+    { data: crmSummaryData },
+    { data: tasksData },
+    { data: notesData },
+    { data: tagLinksData },
+    { data: companyTagsData },
+  ] = await Promise.all([
+    supabase.rpc("get_customer_crm_summary", { p_customer_id: id }).single(),
+    supabase.from("crm_tasks").select("*").eq("customer_id", id),
+    supabase.from("crm_notes").select("*").eq("customer_id", id).order("created_at", { ascending: false }),
+    supabase.from("crm_tag_links").select("crm_tags(*)").eq("customer_id", id),
+    supabase.from("crm_tags").select("*").eq("company_id", session.activeCompany.id).order("name"),
+  ]);
+
+  const crmSummary = crmSummaryData as CustomerCrmSummary | null;
+  const crmTasks = (tasksData as CrmTask[]) ?? [];
+  const crmNotes = (notesData as CrmNote[]) ?? [];
+  const crmCurrentTags = ((tagLinksData ?? []) as unknown as { crm_tags: CrmTag }[])
+    .map((row) => row.crm_tags)
+    .filter(Boolean);
+  const companyTags = (companyTagsData as CrmTag[]) ?? [];
 
   return (
     <div className="max-w-3xl">
@@ -52,6 +85,9 @@ export default async function CustomerDetailPage({
                 {customerFullName(customer)}
               </h1>
               <StatusBadge status={customer.status} />
+              {customer.source && (
+                <Badge variant="outline">{LEAD_SOURCE_LABELS[customer.source]}</Badge>
+              )}
             </div>
             <p className="text-sm text-muted-foreground">
               Cliente desde {new Date(customer.created_at).toLocaleDateString("es-CO", {
@@ -59,6 +95,14 @@ export default async function CustomerDetailPage({
                 year: "numeric",
               })}
             </p>
+            {customer.converted_from_lead_id && (
+              <Link
+                href={`/crm/leads/${customer.converted_from_lead_id}`}
+                className="mt-0.5 inline-flex items-center gap-1 text-xs font-medium text-brand hover:underline"
+              >
+                Viene del lead
+              </Link>
+            )}
           </div>
         </div>
         <div className="flex shrink-0 gap-2">
@@ -93,13 +137,37 @@ export default async function CustomerDetailPage({
         <StatCard label="Última actividad" value="—" />
       </div>
 
-      <Tabs defaultValue="ventas" className="mt-6">
+      <Tabs defaultValue="crm" className="mt-6">
         <TabsList>
+          <TabsTrigger value="crm">CRM</TabsTrigger>
           <TabsTrigger value="ventas">Ventas</TabsTrigger>
           <TabsTrigger value="pedidos">Pedidos</TabsTrigger>
           <TabsTrigger value="pagos">Pagos</TabsTrigger>
           <TabsTrigger value="historial">Historial</TabsTrigger>
         </TabsList>
+        <TabsContent value="crm" className="space-y-6 pt-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <StatCard
+              label="Compras totales"
+              value={formatCurrencyCents(crmSummary?.total_purchases_cents ?? 0)}
+            />
+            <StatCard label="Cantidad de compras" value={String(crmSummary?.purchases_count ?? 0)} />
+            <StatCard
+              label="Última compra"
+              value={
+                crmSummary?.last_purchase_at
+                  ? new Date(crmSummary.last_purchase_at).toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" })
+                  : "—"
+              }
+            />
+            <StatCard label="Leads previos" value={String(crmSummary?.leads_count ?? 0)} />
+            <StatCard label="Tareas abiertas" value={String(crmSummary?.open_tasks_count ?? 0)} />
+          </div>
+
+          <CrmTaskList tasks={crmTasks} customerId={customer.id} />
+          <CrmNoteList notes={crmNotes} owner={{ customerId: customer.id }} />
+          <CrmTagPicker currentTags={crmCurrentTags} companyTags={companyTags} owner={{ customerId: customer.id }} />
+        </TabsContent>
         <TabsContent value="ventas" className="pt-4">
           <EmptyState
             icon={ShoppingCart}

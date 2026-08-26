@@ -27,10 +27,12 @@ export type Permission =
   | "finanzas.editar"
   | "reportes.ver"
   | "configuracion.editar"
-  | "equipo.gestionar";
+  | "equipo.gestionar"
+  | "crm.gestionar"
+  | "marketing.gestionar";
 
 const ROLE_PERMISSIONS: Record<CompanyRole, Permission[]> = {
-  employee: ["ventas.crear", "pedidos.gestionar", "delivery.gestionar", "clientes.editar", "caja.registrar"],
+  employee: ["ventas.crear", "pedidos.gestionar", "delivery.gestionar", "clientes.editar", "caja.registrar", "crm.gestionar"],
   manager: [
     "ventas.crear",
     "ventas.anular",
@@ -46,6 +48,8 @@ const ROLE_PERMISSIONS: Record<CompanyRole, Permission[]> = {
     "gastos.anular",
     "finanzas.ver",
     "reportes.ver",
+    "crm.gestionar",
+    "marketing.gestionar",
   ],
   owner: [
     "ventas.crear",
@@ -65,6 +69,8 @@ const ROLE_PERMISSIONS: Record<CompanyRole, Permission[]> = {
     "reportes.ver",
     "configuracion.editar",
     "equipo.gestionar",
+    "crm.gestionar",
+    "marketing.gestionar",
   ],
 };
 

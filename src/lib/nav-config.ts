@@ -17,6 +17,9 @@ import {
   Settings,
   Sparkles,
   Zap,
+  Contact,
+  Inbox,
+  Megaphone,
   type LucideIcon,
 } from "lucide-react";
 
@@ -111,6 +114,37 @@ export const CORE_NAV: NavGroup[] = [
         icon: Boxes,
         feature: "inventory",
         permission: "inventario.editar",
+      },
+    ],
+  },
+  {
+    label: "CRM",
+    items: [
+      {
+        label: "Leads",
+        href: "/crm/leads",
+        icon: Contact,
+        feature: "crm",
+        permission: "crm.gestionar",
+      },
+      {
+        label: "Bandeja de entrada",
+        href: "/crm/bandeja",
+        icon: Inbox,
+        feature: "crm",
+        permission: "crm.gestionar",
+      },
+    ],
+  },
+  {
+    label: "Marketing",
+    items: [
+      {
+        label: "Marketing",
+        href: "/marketing",
+        icon: Megaphone,
+        feature: "marketing",
+        permission: "marketing.gestionar",
       },
     ],
   },
