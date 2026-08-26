@@ -1,0 +1,74 @@
+<svg width="1200" height="400" viewBox="0 0 1200 400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2E6B3E"/>
+      <stop offset="55%" stop-color="#3F8B4C"/>
+      <stop offset="100%" stop-color="#E8A33D"/>
+    </linearGradient>
+    <linearGradient id="textShade" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#1E4A28" stop-opacity="0.75"/>
+      <stop offset="70%" stop-color="#1E4A28" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#1E4A28" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="400" fill="url(#bg)"/>
+
+  <!-- textura de puntos sutil -->
+  <g opacity="0.08" fill="#ffffff">
+    <circle cx="80" cy="60" r="3"/><circle cx="140" cy="120" r="3"/><circle cx="60" cy="200" r="3"/>
+    <circle cx="200" cy="40" r="3"/><circle cx="260" cy="160" r="3"/><circle cx="320" cy="80" r="3"/>
+    <circle cx="180" cy="280" r="3"/><circle cx="40" cy="330" r="3"/><circle cx="300" cy="320" r="3"/>
+  </g>
+
+  <!-- ola inferior estilo puesto de mercado -->
+  <path d="M0,400 L0,340 Q100,310 200,340 T400,340 T600,340 T800,340 T1000,340 T1200,340 L1200,400 Z" fill="#1E4A28" opacity="0.25"/>
+
+  <!-- hojas verdes grandes, fondo derecho -->
+  <g fill="#2F7A3E">
+    <ellipse cx="980" cy="120" rx="70" ry="34" transform="rotate(-25 980 120)"/>
+    <ellipse cx="1060" cy="90" rx="60" ry="28" transform="rotate(15 1060 90)"/>
+    <ellipse cx="1120" cy="150" rx="55" ry="26" transform="rotate(-10 1120 150)"/>
+  </g>
+
+  <!-- racimo de platanos -->
+  <g transform="translate(880,230)">
+    <path d="M0,60 C-10,10 30,-30 80,-25 C130,-20 150,20 130,60 C110,95 70,105 40,90 C15,78 5,80 0,60 Z" fill="#F2C038"/>
+    <path d="M20,55 C10,15 45,-18 85,-14 C115,-11 132,15 118,48" fill="none" stroke="#D9A82B" stroke-width="4" stroke-linecap="round"/>
+    <path d="M50,50 C42,20 65,-6 95,-3" fill="none" stroke="#D9A82B" stroke-width="4" stroke-linecap="round"/>
+    <ellipse cx="4" cy="70" rx="14" ry="9" fill="#6B4A2A"/>
+  </g>
+
+  <!-- tomate -->
+  <g transform="translate(1030,255)">
+    <circle r="34" fill="#E1543A"/>
+    <circle r="34" fill="#00000010"/>
+    <path d="M-10,-30 Q0,-46 10,-30 Q4,-34 0,-30 Q-4,-34 -10,-30 Z" fill="#3F8B4C"/>
+    <ellipse cx="-10" cy="-10" rx="8" ry="5" fill="#ffffff" opacity="0.25"/>
+  </g>
+
+  <!-- yuca -->
+  <g transform="translate(1105,300) rotate(18)">
+    <path d="M-70,0 C-70,-16 -50,-24 0,-24 C50,-24 70,-16 70,0 C70,16 50,24 0,24 C-50,24 -70,16 -70,0 Z" fill="#C99A62"/>
+    <path d="M-70,0 C-70,-16 -50,-24 -30,-24 C-8,-24 -8,24 -30,24 C-50,24 -70,16 -70,0 Z" fill="#E9D3AE"/>
+    <path d="M60,-14 C68,-10 72,-4 72,0 C72,4 68,10 60,14" fill="none" stroke="#8A6A3E" stroke-width="3" opacity="0.5"/>
+    <path d="M-40,-10 C-20,-14 20,-14 40,-10" fill="none" stroke="#A87F4C" stroke-width="2" opacity="0.5"/>
+    <path d="M-40,10 C-20,14 20,14 40,10" fill="none" stroke="#A87F4C" stroke-width="2" opacity="0.5"/>
+  </g>
+
+  <!-- zanahoria pequena -->
+  <g transform="translate(940,330) rotate(200)">
+    <path d="M0,0 C-6,40 -3,70 0,80 C3,70 6,40 0,0 Z" fill="#E77B2D"/>
+    <path d="M-4,-2 C-10,-14 -4,-20 0,-8 C4,-20 10,-14 4,-2 Z" fill="#3F8B4C"/>
+  </g>
+
+  <!-- texto -->
+  <rect x="0" y="0" width="620" height="400" fill="url(#textShade)"/>
+  <text x="70" y="185" font-family="'Poppins', 'Segoe UI', sans-serif" font-size="66" font-weight="700" fill="#ffffff">Puesto Roque</text>
+  <text x="70" y="230" font-family="'Poppins', 'Segoe UI', sans-serif" font-size="26" font-weight="600" fill="#F4E7C7">Frutas, verduras y tubérculos frescos</text>
+
+  <g transform="translate(70,255)">
+    <rect x="0" y="0" rx="18" ry="18" width="205" height="40" fill="#ffffff" opacity="0.15"/>
+    <text x="16" y="27" font-family="'Poppins', 'Segoe UI', sans-serif" font-size="18" font-weight="500" fill="#ffffff">🍌 Plátano · Yuca · más</text>
+  </g>
+</svg>

@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -c 'as \\\\$\\\\$$' supabase/migrations/0013_plans.sql)",
+      "Bash(grep -o '\\\\$\\\\$' supabase/migrations/0013_plans.sql)",
+      "Bash(grep -c 'as \\\\$\\\\$$' supabase/migrations/0014_admin.sql)",
+      "Bash(grep -o '\\\\$\\\\$' supabase/migrations/0014_admin.sql)",
+      "Bash(grep -n \"COP\\\\|USD\\\\|\\\\\\\\$\" src/components/admin/plan-editor-card.tsx)",
+      "Bash(grep -c 'as \\\\$\\\\$$' supabase/migrations/0016_ai_automations.sql)",
+      "Bash(grep -o '\\\\$\\\\$' supabase/migrations/0016_ai_automations.sql)"
+    ]
+  }
+}

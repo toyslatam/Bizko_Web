@@ -1,69 +1,142 @@
 import Image from "next/image";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { BUSINESS_MODULES } from "@/modules/registry";
+import { createClient } from "@/lib/supabase/server";
+import { formatPlanPrice } from "@/lib/plans";
+import { CheckCircle2 } from "lucide-react";
+import type { Plan, PlanCode } from "@/types/database";
 
-export default function Home() {
+interface PlanWithFeatures extends Plan {
+  plan_features: { enabled: boolean; feature: { name: string } | null }[];
+}
+
+const PLAN_EMOJI: Record<PlanCode, string> = {
+  basico: "",
+  negocio: "⭐ ",
+  pro: "🚀 ",
+};
+
+export default async function LandingPage() {
+  const supabase = await createClient();
+  const { data: plansData } = await supabase
+    .from("plans")
+    .select("*, plan_features(enabled, feature:features(name))")
+    .eq("is_active", true)
+    .order("price_monthly_cents", { ascending: true });
+  const plans = (plansData ?? []) as unknown as PlanWithFeatures[];
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="flex min-h-dvh flex-col">
+      <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-5 sm:px-6">
+        <div className="flex items-center gap-2">
+          <Image src="/files/app_icon.svg" alt="" width={32} height={32} className="rounded-lg" />
+          <span className="font-heading text-lg font-semibold text-foreground">bizko</span>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" asChild>
+            <Link href="/login">Iniciar sesión</Link>
+          </Button>
+          <Button size="sm" asChild>
+            <Link href="/registro">Empieza gratis</Link>
+          </Button>
         </div>
-      </main>
+      </header>
+
+      <section className="mx-auto flex w-full max-w-3xl flex-col items-center px-4 py-16 text-center sm:px-6 sm:py-24">
+        <span className="rounded-full bg-brand/10 px-3 py-1 text-xs font-medium text-brand">
+          Hecho para negocios pequeños
+        </span>
+        <h1 className="mt-5 font-heading text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
+          Tu negocio, inteligente
+        </h1>
+        <p className="mt-4 max-w-xl text-base text-muted-foreground sm:text-lg">
+          Administra tus ventas, pedidos, inventario y clientes desde una sola
+          app. Simple hoy, inteligente mañana con automatización e IA.
+        </p>
+        <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+          <Button size="lg" className="h-11 px-6" asChild>
+            <Link href="/registro">Empieza gratis</Link>
+          </Button>
+          <Button size="lg" variant="brand" className="h-11 px-6" asChild>
+            <Link href="/login">Ver demo</Link>
+          </Button>
+        </div>
+      </section>
+
+      <section className="mx-auto w-full max-w-6xl px-4 pb-16 sm:px-6">
+        <h2 className="text-center font-heading text-xl font-semibold text-foreground">
+          Hecho para tu tipo de negocio
+        </h2>
+        <p className="mx-auto mt-1 max-w-md text-center text-sm text-muted-foreground">
+          Elige tu rubro al crear tu cuenta y bizko se adapta a ti.
+        </p>
+        <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
+          {BUSINESS_MODULES.map((m) => (
+            <div
+              key={m.type}
+              className="flex flex-col items-center gap-2 rounded-xl border border-border bg-card px-3 py-5 text-center"
+            >
+              <span className="text-2xl">{m.emoji}</span>
+              <span className="text-xs font-medium text-foreground">{m.name}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="mx-auto w-full max-w-6xl px-4 pb-20 sm:px-6">
+        <h2 className="text-center font-heading text-xl font-semibold text-foreground">
+          Un plan para cada etapa
+        </h2>
+        <div className="mt-8 grid gap-4 sm:grid-cols-3">
+          {plans.map((plan) => {
+            const price = formatPlanPrice(plan);
+            return (
+            <div
+              key={plan.id}
+              className="flex flex-col rounded-2xl border border-border bg-card p-6"
+            >
+              {plan.is_recommended && (
+                <span className="mb-2 w-fit rounded-full bg-brand/10 px-2.5 py-0.5 text-xs font-medium text-brand">
+                  Recomendado
+                </span>
+              )}
+              <h3 className="font-heading text-lg font-semibold text-foreground">
+                {PLAN_EMOJI[plan.code]}
+                {plan.name}
+              </h3>
+              <p className="mt-1 text-sm text-muted-foreground">{plan.description}</p>
+              <p className="mt-3 font-heading text-2xl font-semibold text-foreground">
+                {price.primary}
+                {plan.price_monthly_cents > 0 && (
+                  <span className="text-sm font-normal text-muted-foreground"> / mes</span>
+                )}
+              </p>
+              {price.secondary && (
+                <p className="text-xs text-muted-foreground">{price.secondary}</p>
+              )}
+              <ul className="mt-4 flex-1 space-y-2">
+                {plan.plan_features
+                  .filter((pf) => pf.enabled && pf.feature)
+                  .map((pf) => (
+                    <li key={pf.feature!.name} className="flex items-start gap-2 text-sm text-foreground">
+                      <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-success" />
+                      {pf.feature!.name}
+                    </li>
+                  ))}
+              </ul>
+              <Button className="mt-6" variant={plan.is_recommended ? "default" : "outline"} asChild>
+                <Link href="/registro">Elegir {plan.name}</Link>
+              </Button>
+            </div>
+            );
+          })}
+        </div>
+      </section>
+
+      <footer className="mt-auto border-t border-border py-6 text-center text-xs text-muted-foreground">
+        © {new Date().getFullYear()} bizko — Tu negocio, inteligente.
+      </footer>
     </div>
   );
 }
