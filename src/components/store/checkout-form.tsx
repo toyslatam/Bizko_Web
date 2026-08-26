@@ -115,7 +115,7 @@ export function CheckoutForm({
   if (items.length === 0) return null;
 
   return (
-    <div>
+    <div className="mx-auto max-w-3xl">
       <Link
         href={`/store/${slug}/carrito`}
         className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"

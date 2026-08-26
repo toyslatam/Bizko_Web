@@ -58,16 +58,24 @@ export default async function PublicStorePage({ params, searchParams }: PageProp
   const featured = !isFiltering ? products.filter((p) => p.is_featured) : [];
 
   return (
-    <div className="space-y-4">
-      <SearchBar />
-      {categories.length > 0 && <CategoryFilter categories={categories} />}
+    <div className="space-y-5">
+      <div className="space-y-3 sm:flex sm:items-center sm:justify-between sm:gap-4 sm:space-y-0">
+        <div className="sm:max-w-xs sm:flex-1">
+          <SearchBar />
+        </div>
+        {categories.length > 0 && (
+          <div className="sm:flex-1">
+            <CategoryFilter categories={categories} />
+          </div>
+        )}
+      </div>
 
       {featured.length > 0 && (
         <div className="space-y-2">
           <h2 className="font-heading text-sm font-semibold text-foreground">Destacados</h2>
-          <div className="-mx-4 flex gap-3 overflow-x-auto px-4 [scrollbar-width:none]">
+          <div className="-mx-4 flex gap-3 overflow-x-auto px-4 [scrollbar-width:none] lg:mx-0 lg:px-0">
             {featured.map((p) => (
-              <div key={p.id} className="w-40 shrink-0">
+              <div key={p.id} className="w-40 shrink-0 sm:w-48">
                 <ProductCard slug={slug} product={p} />
               </div>
             ))}
@@ -90,7 +98,7 @@ export default async function PublicStorePage({ params, searchParams }: PageProp
           />
         )
       ) : (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 lg:gap-6 xl:grid-cols-4">
           {products.map((p) => (
             <ProductCard key={p.id} slug={slug} product={p} />
           ))}

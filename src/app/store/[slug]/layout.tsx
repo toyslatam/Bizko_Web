@@ -39,22 +39,22 @@ export default async function StoreLayout({
 
   return (
     <CartProvider slug={company.slug}>
-      <div className="min-h-dvh bg-muted/30" style={accentStyle}>
+      <div className="min-h-dvh bg-background" style={accentStyle}>
         <header className="bg-sidebar text-white">
-          <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3">
+          <div className="mx-auto flex max-w-[1600px] items-center justify-between px-4 py-2.5 lg:px-10">
             <Link href={`/store/${company.slug}`} className="flex items-center gap-2">
               {company.logo_url ? (
                 <Image
                   src={company.logo_url}
                   alt=""
-                  width={32}
-                  height={32}
-                  className="size-8 rounded-lg object-cover"
+                  width={28}
+                  height={28}
+                  className="size-7 rounded-lg object-cover"
                 />
               ) : (
-                <Image src="/files/app_icon.svg" alt="" width={32} height={32} className="rounded-lg" />
+                <Image src="/files/app_icon.svg" alt="" width={28} height={28} className="rounded-lg" />
               )}
-              <span className="font-heading text-base font-semibold">{company.name}</span>
+              <span className="font-heading text-sm font-semibold leading-tight">{company.name}</span>
             </Link>
             <div className="flex items-center gap-1">
               <ShareButton title={`Compra en ${company.name}`} url={shareUrl} />
@@ -62,12 +62,12 @@ export default async function StoreLayout({
             </div>
           </div>
 
-          <div className="mx-auto flex max-w-3xl flex-col items-center gap-1.5 px-4 pb-6 text-center">
-            <span className="text-2xl">{businessModule.emoji}</span>
-            {company.description && (
-              <p className="max-w-md text-sm text-white/80">{company.description}</p>
-            )}
-            <div className="mt-1 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-white/70">
+          {(company.description || company.city || company.phone || company.business_hours) && (
+            <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-center gap-x-4 gap-y-1 px-4 pb-3 text-center text-xs text-white/70 lg:px-10">
+              <span className="text-base leading-none">{businessModule.emoji}</span>
+              {company.description && (
+                <span className="max-w-md text-xs text-white/80">{company.description}</span>
+              )}
               {company.city && (
                 <span className="flex items-center gap-1">
                   <MapPin className="size-3.5" /> {company.city}
@@ -84,18 +84,18 @@ export default async function StoreLayout({
                 </span>
               )}
             </div>
-          </div>
+          )}
         </header>
 
         {company.banner_url && (
-          <div className="mx-auto max-w-3xl px-4 pt-4">
-            <div className="relative aspect-[3/1] w-full overflow-hidden rounded-xl bg-muted">
-              <Image src={company.banner_url} alt="" fill className="object-cover" sizes="768px" priority />
+          <div className="mx-auto max-w-[1600px] px-4 pt-4 lg:px-10">
+            <div className="relative aspect-[4/1] w-full overflow-hidden rounded-xl bg-muted sm:aspect-[5/1] lg:aspect-[6/1]">
+              <Image src={company.banner_url} alt="" fill className="object-cover" sizes="1600px" priority />
             </div>
           </div>
         )}
 
-        <main className="mx-auto max-w-3xl px-4 py-6 pb-28">{children}</main>
+        <main className="mx-auto max-w-[1600px] px-4 py-6 pb-28 lg:px-10">{children}</main>
 
         <StickyCartBar slug={company.slug} />
       </div>

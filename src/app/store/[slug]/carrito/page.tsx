@@ -23,7 +23,7 @@ export default function CartPage({ params }: { params: Promise<{ slug: string }>
   }
 
   return (
-    <div>
+    <div className="mx-auto max-w-3xl">
       <Link
         href={`/store/${slug}`}
         className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"
@@ -88,7 +88,7 @@ export default function CartPage({ params }: { params: Promise<{ slug: string }>
             ))}
           </div>
 
-          <div className="fixed inset-x-0 bottom-0 border-t border-border bg-card px-4 py-3">
+          <div className="fixed inset-x-0 bottom-0 border-t border-border bg-card px-4 py-3 shadow-[0_-2px_8px_rgba(0,0,0,0.06)]">
             <div className="mx-auto flex max-w-3xl items-center justify-between gap-4">
               <div>
                 <p className="text-xs text-muted-foreground">Total</p>

@@ -11,7 +11,7 @@ export function CategoryFilter({ categories }: { categories: PublicCategory[] })
   const active = searchParams.get("categoria");
 
   return (
-    <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
+    <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] lg:mx-0 lg:justify-end lg:px-0">
       <Link
         href={pathname}
         className={cn(

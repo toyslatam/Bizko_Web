@@ -92,7 +92,7 @@ export default async function PublicProductPage({ params }: ProductPageProps) {
   }
 
   return (
-    <div>
+    <div className="mx-auto max-w-5xl">
       <Link
         href={`/store/${slug}`}
         className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"
@@ -100,10 +100,10 @@ export default async function PublicProductPage({ params }: ProductPageProps) {
         <ArrowLeft className="size-4" /> Volver al catálogo
       </Link>
 
-      <div className="overflow-hidden rounded-2xl border border-border bg-card">
+      <div className="overflow-hidden rounded-2xl border border-border bg-card lg:grid lg:grid-cols-2">
         <div className="relative aspect-square w-full bg-muted">
           {product.image_url ? (
-            <Image src={product.image_url} alt="" fill className="object-cover" sizes="600px" />
+            <Image src={product.image_url} alt="" fill className="object-cover" sizes="(min-width: 1024px) 500px, 600px" />
           ) : (
             <div className="flex size-full items-center justify-center">
               <Package className="size-12 text-muted-foreground" />
@@ -111,9 +111,9 @@ export default async function PublicProductPage({ params }: ProductPageProps) {
           )}
         </div>
 
-        <div className="space-y-3 p-4">
+        <div className="space-y-3 p-4 lg:p-6">
           <div>
-            <h1 className="font-heading text-lg font-semibold text-foreground">{product.name}</h1>
+            <h1 className="font-heading text-lg font-semibold text-foreground lg:text-xl">{product.name}</h1>
             <p className="mt-0.5 text-xl font-semibold text-brand">
               {formatCurrencyCents(product.price_cents)}
               <span className="text-sm font-normal text-muted-foreground"> / {UNIT_LABELS[product.unit]}</span>
