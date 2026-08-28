@@ -13,6 +13,7 @@ import {
   updateCompanyLogoAction,
   updateCompanyBannerAction,
   updateCompanyAccentColorAction,
+  updateCompanySlugAction,
 } from "@/app/(app)/configuracion/actions";
 import { uploadCompanyFile } from "@/lib/storage";
 import { getBusinessModule } from "@/modules/registry";
@@ -327,7 +328,7 @@ export function CompanySettingsForm({
         </div>
       </div>
 
-      <StoreLink slug={company.slug} />
+      <StoreLink companyId={company.id} slug={company.slug} canEdit={canEdit} />
 
       {canEdit ? (
         <Button type="submit" disabled={saving}>
@@ -342,15 +343,20 @@ export function CompanySettingsForm({
   );
 }
 
-function StoreLink({ slug }: { slug: string }) {
-  const [path, setPath] = React.useState(`/store/${slug}`);
+function StoreLink({ companyId, slug, canEdit }: { companyId: string; slug: string; canEdit: boolean }) {
+  const [origin, setOrigin] = React.useState("");
+  const [editing, setEditing] = React.useState(false);
+  const [value, setValue] = React.useState(slug);
+  const [saving, setSaving] = React.useState(false);
 
   React.useEffect(() => {
     // window.location solo existe en el cliente; el servidor renderiza la
     // ruta relativa y esto la completa con el origen tras el montaje.
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setPath(`${window.location.origin}/store/${slug}`);
-  }, [slug]);
+    setOrigin(window.location.origin);
+  }, []);
+
+  const path = `${origin}/store/${slug}`;
 
   async function handleCopy() {
     try {
@@ -361,15 +367,68 @@ function StoreLink({ slug }: { slug: string }) {
     }
   }
 
+  function startEditing() {
+    setValue(slug);
+    setEditing(true);
+  }
+
+  async function handleSaveSlug() {
+    setSaving(true);
+    const result = await updateCompanySlugAction(companyId, value);
+    setSaving(false);
+    if ("error" in result) {
+      toast.error("No pudimos guardar el URL", { description: result.error });
+      return;
+    }
+    setEditing(false);
+    toast.success("URL de tu tienda actualizado. Los enlaces anteriores dejarán de funcionar.");
+  }
+
+  if (editing) {
+    return (
+      <div className="space-y-1.5 rounded-lg border border-border bg-muted/40 p-3">
+        <Label htmlFor="storeSlug">URL de tu catálogo público</Label>
+        <div className="flex items-center gap-2">
+          <span className="shrink-0 text-sm text-muted-foreground">{origin}/store/</span>
+          <Input
+            id="storeSlug"
+            value={value}
+            onChange={(e) => setValue(e.target.value.toLowerCase())}
+            autoFocus
+            className="flex-1"
+          />
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Solo minúsculas, números y guiones. Si compartiste el enlace anterior, dejará de funcionar.
+        </p>
+        <div className="flex gap-2 pt-1">
+          <Button type="button" size="sm" onClick={handleSaveSlug} disabled={saving}>
+            {saving ? "Guardando..." : "Guardar URL"}
+          </Button>
+          <Button type="button" size="sm" variant="ghost" onClick={() => setEditing(false)} disabled={saving}>
+            Cancelar
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-2 rounded-lg border border-border bg-muted/40 p-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="min-w-0">
         <p className="text-xs font-medium text-muted-foreground">Tu catálogo público</p>
         <p className="truncate text-sm text-foreground">{path}</p>
       </div>
-      <Button type="button" variant="outline" size="sm" onClick={handleCopy} className="shrink-0">
-        <Copy /> Copiar enlace
-      </Button>
+      <div className="flex shrink-0 gap-2">
+        {canEdit && (
+          <Button type="button" variant="outline" size="sm" onClick={startEditing}>
+            Editar URL
+          </Button>
+        )}
+        <Button type="button" variant="outline" size="sm" onClick={handleCopy}>
+          <Copy /> Copiar enlace
+        </Button>
+      </div>
     </div>
   );
 }

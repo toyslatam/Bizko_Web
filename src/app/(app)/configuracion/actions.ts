@@ -102,6 +102,33 @@ export async function updateCompanyBannerAction(
   return { ok: true };
 }
 
+const SLUG_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+
+export async function updateCompanySlugAction(
+  companyId: string,
+  slug: string,
+): Promise<{ ok: true } | { error: string }> {
+  const trimmed = slug.trim().toLowerCase();
+  if (trimmed.length < 3) return { error: "El URL debe tener al menos 3 caracteres." };
+  if (!SLUG_RE.test(trimmed)) {
+    return { error: "Solo minúsculas, números y guiones (sin espacios ni acentos)." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("companies")
+    .update({ slug: trimmed, updated_at: new Date().toISOString() })
+    .eq("id", companyId);
+
+  if (error) {
+    if (error.code === "23505") return { error: "Ese URL ya lo está usando otro negocio en bizko." };
+    return { error: "No pudimos guardar el URL. Solo el dueño puede editarlo." };
+  }
+
+  revalidatePath("/configuracion");
+  return { ok: true };
+}
+
 const HEX_COLOR_RE = /^#[0-9a-fA-F]{6}$/;
 
 export async function updateCompanyAccentColorAction(
