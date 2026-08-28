@@ -15,6 +15,13 @@ import { UNIT_SHORT_LABELS } from "@/lib/catalog";
 import { formatCurrencyCents } from "@/lib/format";
 import type { Product } from "@/types/database";
 
+function formatProductPrice(product: Product, range?: { min: number; max: number }) {
+  if (!product.has_variants) return formatCurrencyCents(product.price_cents);
+  if (!range) return "Sin variantes aún";
+  if (range.min === range.max) return formatCurrencyCents(range.min);
+  return `${formatCurrencyCents(range.min)} - ${formatCurrencyCents(range.max)}`;
+}
+
 function Thumb({ product }: { product: Product }) {
   return (
     <div className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-muted">
@@ -27,7 +34,13 @@ function Thumb({ product }: { product: Product }) {
   );
 }
 
-export function ProductList({ products }: { products: Product[] }) {
+export function ProductList({
+  products,
+  priceRangeByProduct,
+}: {
+  products: Product[];
+  priceRangeByProduct?: Map<string, { min: number; max: number }>;
+}) {
   return (
     <>
       <div className="hidden overflow-hidden rounded-xl border border-border md:block">
@@ -50,7 +63,7 @@ export function ProductList({ products }: { products: Product[] }) {
                   </Link>
                 </TableCell>
                 <TableCell className="text-muted-foreground">
-                  {formatCurrencyCents(p.price_cents)}
+                  {formatProductPrice(p, priceRangeByProduct?.get(p.id))}
                 </TableCell>
                 <TableCell className="text-muted-foreground">
                   {UNIT_SHORT_LABELS[p.unit]}
@@ -70,7 +83,7 @@ export function ProductList({ products }: { products: Product[] }) {
             key={p.id}
             href={`/productos/${p.id}`}
             title={p.name}
-            subtitle={`${formatCurrencyCents(p.price_cents)} · ${UNIT_SHORT_LABELS[p.unit]}`}
+            subtitle={`${formatProductPrice(p, priceRangeByProduct?.get(p.id))} · ${UNIT_SHORT_LABELS[p.unit]}`}
             leading={<Thumb product={p} />}
             trailing={<StatusBadge status={p.status} />}
           />

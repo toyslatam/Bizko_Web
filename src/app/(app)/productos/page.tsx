@@ -7,7 +7,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { ListToolbar } from "@/components/catalog/list-toolbar";
 import { ProductFormSheet } from "@/components/productos/product-form-sheet";
 import { ProductList } from "@/components/productos/product-list";
-import type { EntityStatus, Product, ProductCategory } from "@/types/database";
+import type { EntityStatus, Product, ProductCategory, ProductVariant } from "@/types/database";
 
 interface PageProps {
   searchParams: Promise<{ q?: string; status?: string; category?: string }>;
@@ -45,6 +45,27 @@ export default async function ProductosPage({ searchParams }: PageProps) {
   const products = (data ?? []) as Product[];
   const hasFilters = Boolean(q) || Boolean(status) || Boolean(category);
 
+  // Los productos con variantes no tienen un price_cents propio (se maneja
+  // por variante) — se calcula un rango real para no mostrar $0 en la lista.
+  const variantProductIds = products.filter((p) => p.has_variants).map((p) => p.id);
+  const priceRangeByProduct = new Map<string, { min: number; max: number }>();
+  if (variantProductIds.length > 0) {
+    const { data: variantsData } = await supabase
+      .from("product_variants")
+      .select("product_id, price_cents")
+      .in("product_id", variantProductIds)
+      .eq("status", "active");
+    for (const v of (variantsData as Pick<ProductVariant, "product_id" | "price_cents">[]) ?? []) {
+      const current = priceRangeByProduct.get(v.product_id);
+      if (!current) {
+        priceRangeByProduct.set(v.product_id, { min: v.price_cents, max: v.price_cents });
+      } else {
+        current.min = Math.min(current.min, v.price_cents);
+        current.max = Math.max(current.max, v.price_cents);
+      }
+    }
+  }
+
   return (
     <div>
       <PageHeader
@@ -62,7 +83,7 @@ export default async function ProductosPage({ searchParams }: PageProps) {
             categories={(categories as ProductCategory[])?.map((c) => ({ id: c.id, name: c.name }))}
           />
           {products.length > 0 ? (
-            <ProductList products={products} />
+            <ProductList products={products} priceRangeByProduct={priceRangeByProduct} />
           ) : (
             <EmptyState
               icon={Package}
