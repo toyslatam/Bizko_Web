@@ -38,7 +38,7 @@ import { ROLE_LABELS, MEMBER_STATUS_LABELS } from "@/lib/permissions";
 import { sendTeamInvitationAction } from "@/app/(app)/configuracion/actions";
 import type { CompanyMember, CompanyRole, Profile } from "@/types/database";
 
-type Member = CompanyMember & { profile: Profile };
+type Member = CompanyMember & { profile: Profile | null };
 
 const STATUS_VARIANT: Record<Member["status"], "default" | "secondary" | "outline"> = {
   active: "default",
@@ -82,7 +82,7 @@ export function TeamPanel({
                 <TableCell className="font-medium text-foreground">
                   {memberName(m)} {m.user_id === currentUserId && "(tú)"}
                 </TableCell>
-                <TableCell className="text-muted-foreground">{m.profile.email}</TableCell>
+                <TableCell className="text-muted-foreground">{m.profile?.email ?? "Invitación enviada"}</TableCell>
                 <TableCell>{ROLE_LABELS[m.role]}</TableCell>
                 <TableCell>
                   <Badge variant={STATUS_VARIANT[m.status]}>
@@ -100,7 +100,7 @@ export function TeamPanel({
           <MobileListItem
             key={m.id}
             title={`${memberName(m)}${m.user_id === currentUserId ? " (tú)" : ""}`}
-            subtitle={m.profile.email}
+            subtitle={m.profile?.email ?? "Invitación enviada"}
             leading={
               <Avatar className="size-8">
                 <AvatarFallback className="bg-brand/15 text-xs font-semibold text-brand">
@@ -124,6 +124,7 @@ export function TeamPanel({
 }
 
 function memberName(m: Member) {
+  if (!m.profile) return "Invitación pendiente";
   const name = [m.profile.first_name, m.profile.last_name].filter(Boolean).join(" ");
   return name || m.profile.email.split("@")[0];
 }

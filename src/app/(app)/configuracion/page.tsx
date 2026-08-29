@@ -44,7 +44,7 @@ export default async function ConfiguracionPage({
     supabase.rpc("get_plan_usage", { p_company_id: companyId }),
   ]);
 
-  const team = (members ?? []) as unknown as (CompanyMember & { profile: Profile })[];
+  const team = (members ?? []) as unknown as (CompanyMember & { profile: Profile | null })[];
   const plans = (plansData ?? []) as unknown as PlanWithFeatures[];
   const usage = (usageData as PlanUsageRow[] | null) ?? [];
   const isOwner = session.activeMembership?.role === "owner";
