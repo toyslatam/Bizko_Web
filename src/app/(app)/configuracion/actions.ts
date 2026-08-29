@@ -203,12 +203,8 @@ export async function sendTeamInvitationAction(
   const alreadyHadAccount = Boolean(userId);
 
   if (!userId) {
-    const headerList = await headers();
-    const host = headerList.get("host") ?? "";
-    const protocol = headerList.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
-
     const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(trimmedEmail, {
-      redirectTo: `${protocol}://${host}/actualizar-password`,
+      redirectTo: await inviteRedirectUrl(),
     });
     if (inviteError || !invited?.user) {
       return { error: inviteError?.message || "No pudimos enviar la invitación. Intenta de nuevo." };
@@ -230,4 +226,75 @@ export async function sendTeamInvitationAction(
 
   revalidatePath("/configuracion");
   return { ok: true, alreadyHadAccount };
+}
+
+/** URL a la que Supabase redirige tras el link del correo (crear contraseña) — usa el host real del request, nunca uno fijo. */
+async function inviteRedirectUrl(): Promise<string> {
+  const headerList = await headers();
+  const host = headerList.get("host") ?? "";
+  const protocol = headerList.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
+  return `${protocol}://${host}/actualizar-password`;
+}
+
+/**
+ * Reenvía una invitación pendiente. El usuario de Auth que quedó del primer
+ * envío no se puede "reinvitar" directo (Supabase rechaza invitar un correo
+ * que ya tiene un usuario, aunque no haya confirmado nada) — se borra ese
+ * usuario sin confirmar y se crea uno nuevo con el link correcto, luego se
+ * re-vincula la misma fila de company_members al nuevo user_id.
+ */
+export async function resendTeamInvitationAction(
+  companyId: string,
+  memberId: string,
+): Promise<{ ok: true } | { error: string }> {
+  const session = await getSessionContext();
+  if (
+    !session ||
+    session.activeCompany?.id !== companyId ||
+    !can(session.activeMembership?.role ?? "employee", "equipo.gestionar")
+  ) {
+    return { error: "No tienes permiso para gestionar el equipo de este negocio." };
+  }
+
+  const admin = createAdminClient();
+  if (!admin) return { error: "El envío de invitaciones todavía no está disponible en este entorno." };
+
+  const supabase = await createClient();
+  const { data: member } = await supabase
+    .from("company_members")
+    .select("id, user_id, role, status")
+    .eq("id", memberId)
+    .eq("company_id", companyId)
+    .maybeSingle();
+
+  if (!member || member.status !== "invited") {
+    return { error: "Esa invitación ya no está pendiente." };
+  }
+
+  const { data: userRow } = await admin.auth.admin.getUserById(member.user_id);
+  const email = userRow?.user?.email;
+  if (!email) return { error: "No encontramos el correo de esa invitación." };
+
+  // Cascada: borrar el usuario sin confirmar también borra esta fila de
+  // company_members (on delete cascade) — se re-crea después con el mismo
+  // rol, apuntando al usuario nuevo.
+  await admin.auth.admin.deleteUser(member.user_id);
+
+  const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(email, {
+    redirectTo: await inviteRedirectUrl(),
+  });
+  if (inviteError || !invited?.user) {
+    return { error: inviteError?.message || "No pudimos reenviar la invitación." };
+  }
+
+  const { error: memberError } = await supabase.from("company_members").insert({
+    company_id: companyId,
+    user_id: invited.user.id,
+    role: member.role,
+    status: "invited",
+  });
+  if (memberError) return { error: "El correo se reenvió, pero no pudimos actualizar el equipo. Refresca la página." };
+
+  revalidatePath("/configuracion");
+  return { ok: true };
 }

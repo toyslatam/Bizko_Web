@@ -35,7 +35,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ROLE_LABELS, MEMBER_STATUS_LABELS } from "@/lib/permissions";
-import { sendTeamInvitationAction } from "@/app/(app)/configuracion/actions";
+import { sendTeamInvitationAction, resendTeamInvitationAction } from "@/app/(app)/configuracion/actions";
 import type { CompanyMember, CompanyRole, Profile } from "@/types/database";
 
 type Member = CompanyMember & { profile: Profile | null };
@@ -74,6 +74,7 @@ export function TeamPanel({
               <TableHead>Correo</TableHead>
               <TableHead>Rol</TableHead>
               <TableHead>Estado</TableHead>
+              {canManage && <TableHead />}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -89,6 +90,13 @@ export function TeamPanel({
                     {MEMBER_STATUS_LABELS[m.status]}
                   </Badge>
                 </TableCell>
+                {canManage && (
+                  <TableCell className="text-right">
+                    {m.status === "invited" && (
+                      <ResendInviteButton companyId={companyId} memberId={m.id} />
+                    )}
+                  </TableCell>
+                )}
               </TableRow>
             ))}
           </TableBody>
@@ -114,6 +122,9 @@ export function TeamPanel({
                 <Badge variant={STATUS_VARIANT[m.status]} className="text-[10px]">
                   {MEMBER_STATUS_LABELS[m.status]}
                 </Badge>
+                {canManage && m.status === "invited" && (
+                  <ResendInviteButton companyId={companyId} memberId={m.id} />
+                )}
               </div>
             }
           />
@@ -212,5 +223,29 @@ function InviteDialog({ companyId }: { companyId: string }) {
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function ResendInviteButton({ companyId, memberId }: { companyId: string; memberId: string }) {
+  const router = useRouter();
+  const [sending, setSending] = React.useState(false);
+
+  async function handleResend() {
+    setSending(true);
+    const result = await resendTeamInvitationAction(companyId, memberId);
+    setSending(false);
+
+    if ("error" in result) {
+      toast.error("No pudimos reenviar la invitación", { description: result.error });
+      return;
+    }
+    toast.success("Invitación reenviada.");
+    router.refresh();
+  }
+
+  return (
+    <Button variant="ghost" size="sm" onClick={handleResend} disabled={sending} className="h-auto px-2 py-1 text-xs">
+      {sending ? "Reenviando..." : "Reenviar"}
+    </Button>
   );
 }
