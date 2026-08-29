@@ -34,6 +34,15 @@ export function formatUsdCentsAsCop(usdCents: number): string {
   return `${COP_FORMATTER.format(copValue)} COP aprox.`;
 }
 
+/** Rango de precio de un set de variantes — "$50.000" si todas cuestan igual, "$50.000 - $80.000" si no. */
+export function formatVariantPriceRange(variants: { price_cents: number }[]): string {
+  if (variants.length === 0) return "Consultar precio";
+  const prices = variants.map((v) => v.price_cents);
+  const min = Math.min(...prices);
+  const max = Math.max(...prices);
+  return min === max ? formatCurrencyCents(min) : `${formatCurrencyCents(min)} - ${formatCurrencyCents(max)}`;
+}
+
 export function greeting(): string {
   const hour = new Date().getHours();
   if (hour < 12) return "Buenos días";

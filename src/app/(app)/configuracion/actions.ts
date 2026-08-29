@@ -1,7 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { getSessionContext } from "@/lib/auth/session";
+import { can } from "@/lib/permissions";
+import { checkPlanLimit } from "@/lib/subscription";
+import type { CompanyRole } from "@/types/database";
 
 interface UpdateCompanyInput {
   companyId: string;
@@ -148,4 +154,80 @@ export async function updateCompanyAccentColorAction(
   if (error) return { error: "No pudimos guardar el color." };
   revalidatePath("/configuracion");
   return { ok: true };
+}
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/**
+ * Invita a alguien a la empresa. Si el correo ya tiene cuenta en bizko
+ * (de esta u otra empresa), se agrega directo como miembro activo — no hace
+ * falta reenviar nada, ya tiene con qué iniciar sesión. Si es correo nuevo,
+ * se crea el usuario de Auth y Supabase envía el correo de invitación (link
+ * mágico); queda "invited" hasta que entre por primera vez — ver
+ * getSessionContext(), que activa la membresía en cuanto detecta la sesión.
+ */
+export async function sendTeamInvitationAction(
+  companyId: string,
+  email: string,
+  role: CompanyRole,
+): Promise<{ ok: true; alreadyHadAccount: boolean } | { error: string }> {
+  const trimmedEmail = email.trim().toLowerCase();
+  if (!EMAIL_RE.test(trimmedEmail)) return { error: "Correo inválido." };
+  if (role !== "manager" && role !== "employee") return { error: "Rol inválido." };
+
+  const session = await getSessionContext();
+  if (
+    !session ||
+    session.activeCompany?.id !== companyId ||
+    !can(session.activeMembership?.role ?? "employee", "equipo.gestionar")
+  ) {
+    return { error: "No tienes permiso para invitar personas a este negocio." };
+  }
+
+  const supabase = await createClient();
+  const limitCheck = await checkPlanLimit(supabase, companyId, "max_users");
+  if (!limitCheck.ok) return { error: limitCheck.error };
+
+  const admin = createAdminClient();
+  if (!admin) {
+    return { error: "El envío de invitaciones todavía no está disponible en este entorno." };
+  }
+
+  const { data: existingProfile } = await admin
+    .from("profiles")
+    .select("id")
+    .eq("email", trimmedEmail)
+    .maybeSingle();
+
+  let userId = (existingProfile as { id: string } | null)?.id ?? null;
+  const alreadyHadAccount = Boolean(userId);
+
+  if (!userId) {
+    const headerList = await headers();
+    const host = headerList.get("host") ?? "";
+    const protocol = headerList.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
+
+    const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(trimmedEmail, {
+      redirectTo: `${protocol}://${host}/actualizar-password`,
+    });
+    if (inviteError || !invited?.user) {
+      return { error: inviteError?.message || "No pudimos enviar la invitación. Intenta de nuevo." };
+    }
+    userId = invited.user.id;
+  }
+
+  const { error: memberError } = await supabase.from("company_members").insert({
+    company_id: companyId,
+    user_id: userId,
+    role,
+    status: alreadyHadAccount ? "active" : "invited",
+  });
+
+  if (memberError) {
+    if (memberError.code === "23505") return { error: "Esa persona ya es parte de tu equipo." };
+    return { error: "No pudimos agregar a la persona a tu equipo." };
+  }
+
+  revalidatePath("/configuracion");
+  return { ok: true, alreadyHadAccount };
 }

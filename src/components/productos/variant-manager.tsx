@@ -11,10 +11,12 @@ import type { ProductVariant, VariantAttribute } from "@/types/database";
 
 export function VariantManager({
   productId,
+  productName,
   variants,
   attributesByVariant,
 }: {
   productId: string;
+  productName: string;
   variants: ProductVariant[];
   attributesByVariant: Map<string, VariantAttribute[]>;
 }) {
@@ -22,7 +24,7 @@ export function VariantManager({
     <div>
       <div className="mb-3 flex items-center justify-between">
         <p className="text-sm font-semibold text-foreground">Variantes</p>
-        <VariantFormDialog productId={productId} />
+        <VariantFormDialog productId={productId} productName={productName} />
       </div>
 
       {variants.length === 0 ? (
@@ -46,7 +48,12 @@ export function VariantManager({
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   <StatusBadge status={variant.status} />
-                  <VariantFormDialog productId={productId} variant={variant} attributes={attrs} />
+                  <VariantFormDialog
+                    productId={productId}
+                    productName={productName}
+                    variant={variant}
+                    attributes={attrs}
+                  />
                   <ToggleStatusButton
                     status={variant.status}
                     entityLabel="Variante"

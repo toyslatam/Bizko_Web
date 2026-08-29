@@ -5,7 +5,7 @@ import type { Metadata } from "next";
 import { ArrowLeft, Package } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { ProductDetailActions } from "@/components/store/product-detail-actions";
-import { formatCurrencyCents } from "@/lib/format";
+import { formatCurrencyCents, formatVariantPriceRange } from "@/lib/format";
 import { UNIT_LABELS } from "@/lib/catalog";
 import { formatQuantity } from "@/lib/inventory";
 import type {
@@ -115,8 +115,14 @@ export default async function PublicProductPage({ params }: ProductPageProps) {
           <div>
             <h1 className="font-heading text-lg font-semibold text-foreground lg:text-xl">{product.name}</h1>
             <p className="mt-0.5 text-xl font-semibold text-brand">
-              {formatCurrencyCents(product.price_cents)}
-              <span className="text-sm font-normal text-muted-foreground"> / {UNIT_LABELS[product.unit]}</span>
+              {product.has_variants ? (
+                formatVariantPriceRange(variants)
+              ) : (
+                <>
+                  {formatCurrencyCents(product.price_cents)}
+                  <span className="text-sm font-normal text-muted-foreground"> / {UNIT_LABELS[product.unit]}</span>
+                </>
+              )}
             </p>
           </div>
 

@@ -12,7 +12,22 @@ import { formatCurrencyCents } from "@/lib/format";
 import { UNIT_SHORT_LABELS } from "@/lib/catalog";
 import type { PublicProduct } from "@/types/database";
 
-export function ProductCard({ slug, product }: { slug: string; product: PublicProduct }) {
+function formatCardPrice(product: PublicProduct, range?: { min: number; max: number }) {
+  if (!product.has_variants) return formatCurrencyCents(product.price_cents);
+  if (!range) return "Consultar precio";
+  if (range.min === range.max) return formatCurrencyCents(range.min);
+  return `${formatCurrencyCents(range.min)} - ${formatCurrencyCents(range.max)}`;
+}
+
+export function ProductCard({
+  slug,
+  product,
+  priceRange,
+}: {
+  slug: string;
+  product: PublicProduct;
+  priceRange?: { min: number; max: number };
+}) {
   const { addItem } = useCart();
   const [quickViewOpen, setQuickViewOpen] = React.useState(false);
   const isOut = product.track_inventory && product.current_stock <= 0;
@@ -76,8 +91,10 @@ export function ProductCard({ slug, product }: { slug: string; product: PublicPr
           <p className="line-clamp-2 text-sm font-medium text-foreground">{product.name}</p>
           <div className="mt-auto flex items-center justify-between pt-1">
             <span className="text-sm font-semibold text-foreground">
-              {formatCurrencyCents(product.price_cents)}
-              <span className="text-xs font-normal text-muted-foreground"> /{UNIT_SHORT_LABELS[product.unit]}</span>
+              {formatCardPrice(product, priceRange)}
+              {!product.has_variants && (
+                <span className="text-xs font-normal text-muted-foreground"> /{UNIT_SHORT_LABELS[product.unit]}</span>
+              )}
             </span>
             <button
               type="button"

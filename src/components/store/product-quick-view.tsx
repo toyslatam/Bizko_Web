@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { createClient } from "@/lib/supabase/client";
 import { ProductDetailActions } from "@/components/store/product-detail-actions";
-import { formatCurrencyCents } from "@/lib/format";
+import { formatCurrencyCents, formatVariantPriceRange } from "@/lib/format";
 import { UNIT_LABELS } from "@/lib/catalog";
 import { formatQuantity } from "@/lib/inventory";
 import type {
@@ -118,8 +118,18 @@ export function ProductQuickView({
             <div>
               <h2 className="font-heading text-lg font-semibold text-foreground">{product.name}</h2>
               <p className="mt-0.5 text-xl font-semibold text-brand">
-                {formatCurrencyCents(product.price_cents)}
-                <span className="text-sm font-normal text-muted-foreground"> / {UNIT_LABELS[product.unit]}</span>
+                {product.has_variants ? (
+                  data ? (
+                    formatVariantPriceRange(data.variants)
+                  ) : (
+                    <span className="text-sm font-normal text-muted-foreground">Cargando precio...</span>
+                  )
+                ) : (
+                  <>
+                    {formatCurrencyCents(product.price_cents)}
+                    <span className="text-sm font-normal text-muted-foreground"> / {UNIT_LABELS[product.unit]}</span>
+                  </>
+                )}
               </p>
             </div>
 

@@ -1,6 +1,8 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { UserPlus, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,6 +35,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ROLE_LABELS, MEMBER_STATUS_LABELS } from "@/lib/permissions";
+import { sendTeamInvitationAction } from "@/app/(app)/configuracion/actions";
 import type { CompanyMember, CompanyRole, Profile } from "@/types/database";
 
 type Member = CompanyMember & { profile: Profile };
@@ -44,6 +47,7 @@ const STATUS_VARIANT: Record<Member["status"], "default" | "secondary" | "outlin
 };
 
 export function TeamPanel({
+  companyId,
   members,
   currentUserId,
   canManage,
@@ -59,7 +63,7 @@ export function TeamPanel({
         <p className="text-sm text-muted-foreground">
           {members.length} {members.length === 1 ? "persona" : "personas"} con acceso
         </p>
-        {canManage && <InviteDialog />}
+        {canManage && <InviteDialog companyId={companyId} />}
       </div>
 
       <div className="hidden overflow-hidden rounded-xl border border-border md:block">
@@ -124,10 +128,32 @@ function memberName(m: Member) {
   return name || m.profile.email.split("@")[0];
 }
 
-function InviteDialog() {
+function InviteDialog({ companyId }: { companyId: string }) {
+  const router = useRouter();
   const [open, setOpen] = React.useState(false);
   const [email, setEmail] = React.useState("");
   const [role, setRole] = React.useState<CompanyRole>("employee");
+  const [sending, setSending] = React.useState(false);
+
+  async function handleInvite() {
+    setSending(true);
+    const result = await sendTeamInvitationAction(companyId, email, role);
+    setSending(false);
+
+    if ("error" in result) {
+      toast.error("No pudimos enviar la invitación", { description: result.error });
+      return;
+    }
+    toast.success(
+      result.alreadyHadAccount
+        ? "Esa persona ya tenía cuenta en bizko — se agregó directo a tu equipo."
+        : "Invitación enviada. Le llegó un correo para crear su contraseña.",
+    );
+    setOpen(false);
+    setEmail("");
+    setRole("employee");
+    router.refresh();
+  }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -170,18 +196,17 @@ function InviteDialog() {
 
           <div className="flex items-start gap-2 rounded-lg bg-muted px-3 py-2.5 text-xs text-muted-foreground">
             <Mail className="mt-0.5 size-3.5 shrink-0" />
-            El envío de invitaciones por correo estará disponible próximamente.
-            Por ahora esta pantalla deja lista la estructura (rol y estado
-            &quot;Invitación pendiente&quot;).
+            Si ese correo ya tiene cuenta en bizko, se agrega directo. Si es nuevo,
+            le llega un correo para crear su contraseña.
           </div>
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>
+          <Button variant="outline" onClick={() => setOpen(false)} disabled={sending}>
             Cancelar
           </Button>
-          <Button disabled title="Disponible próximamente">
-            Enviar invitación
+          <Button onClick={handleInvite} disabled={sending || !email}>
+            {sending ? "Enviando..." : "Enviar invitación"}
           </Button>
         </DialogFooter>
       </DialogContent>

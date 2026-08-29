@@ -43,26 +43,36 @@ export default async function PublicStorePage({ params, searchParams }: PageProp
   const company = companyData as PublicCompany | null;
   if (!company) notFound();
 
-  const [{ data: categoriesData }, { data: productsData }] = await Promise.all([
+  const [{ data: categoriesData }, { data: productsData }, { data: priceRangesData }] = await Promise.all([
     supabase.rpc("list_public_categories", { p_company_id: company.id }),
     supabase.rpc("list_public_products", {
       p_company_id: company.id,
       p_category_id: categoria || null,
       p_search: buscar || null,
     }),
+    supabase.rpc("list_public_variant_price_ranges", { p_company_id: company.id }),
   ]);
 
   const categories = (categoriesData as PublicCategory[]) ?? [];
   let products = (productsData as PublicProduct[]) ?? [];
+  const priceRangeByProduct = new Map<string, { min: number; max: number }>(
+    ((priceRangesData as { product_id: string; min_price_cents: number; max_price_cents: number }[]) ?? []).map(
+      (r) => [r.product_id, { min: r.min_price_cents, max: r.max_price_cents }],
+    ),
+  );
+
+  function sortPrice(p: PublicProduct) {
+    return p.has_variants ? (priceRangeByProduct.get(p.id)?.min ?? 0) : p.price_cents;
+  }
 
   const onlyAvailable = disponible === "1";
   if (onlyAvailable) {
     products = products.filter((p) => !(p.track_inventory && p.current_stock <= 0));
   }
   if (orden === "precio_asc") {
-    products = [...products].sort((a, b) => a.price_cents - b.price_cents);
+    products = [...products].sort((a, b) => sortPrice(a) - sortPrice(b));
   } else if (orden === "precio_desc") {
-    products = [...products].sort((a, b) => b.price_cents - a.price_cents);
+    products = [...products].sort((a, b) => sortPrice(b) - sortPrice(a));
   }
 
   const isFiltering = Boolean(categoria || buscar || onlyAvailable);
@@ -78,7 +88,7 @@ export default async function PublicStorePage({ params, searchParams }: PageProp
           <div className="-mx-4 flex gap-3 overflow-x-auto px-4 [scrollbar-width:none] lg:mx-0 lg:px-0">
             {featured.map((p) => (
               <div key={p.id} className="w-40 shrink-0 sm:w-48">
-                <ProductCard slug={slug} product={p} />
+                <ProductCard slug={slug} product={p} priceRange={priceRangeByProduct.get(p.id)} />
               </div>
             ))}
           </div>
@@ -113,7 +123,7 @@ export default async function PublicStorePage({ params, searchParams }: PageProp
           </div>
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 lg:gap-6 xl:grid-cols-4">
             {products.map((p) => (
-              <ProductCard key={p.id} slug={slug} product={p} />
+              <ProductCard key={p.id} slug={slug} product={p} priceRange={priceRangeByProduct.get(p.id)} />
             ))}
           </div>
         </>

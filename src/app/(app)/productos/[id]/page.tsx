@@ -184,6 +184,7 @@ export default async function ProductDetailPage({
         <div className="mt-6">
           <VariantManager
             productId={product.id}
+            productName={product.name}
             variants={variants}
             attributesByVariant={attributesByVariant}
           />

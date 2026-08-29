@@ -22,17 +22,19 @@ import {
   type VariantAttributeInput,
   type VariantInput,
 } from "@/app/(app)/productos/variant-actions";
-import { COMMON_ATTRIBUTE_NAMES } from "@/lib/variants";
+import { COMMON_ATTRIBUTE_NAMES, SUGGESTED_ATTRIBUTE_VALUES, generateVariantSku } from "@/lib/variants";
 import type { ProductVariant, VariantAttribute } from "@/types/database";
 
 const EMPTY_ATTR: VariantAttributeInput = { name: "Talla", value: "" };
 
 export function VariantFormDialog({
   productId,
+  productName,
   variant,
   attributes,
 }: {
   productId: string;
+  productName: string;
   variant?: ProductVariant;
   attributes?: VariantAttribute[];
 }) {
@@ -51,12 +53,22 @@ export function VariantFormDialog({
       : { sku: "", price: "", cost: "", stock: "", attributes: [{ ...EMPTY_ATTR }, { name: "Color", value: "" }] },
   );
   const [saving, setSaving] = React.useState(false);
+  const skuTouchedRef = React.useRef(Boolean(variant?.sku));
 
   function patchAttr(index: number, patch: Partial<VariantAttributeInput>) {
-    setValues((v) => ({
-      ...v,
-      attributes: v.attributes.map((a, i) => (i === index ? { ...a, ...patch } : a)),
-    }));
+    setValues((v) => {
+      const attributes = v.attributes.map((a, i) => (i === index ? { ...a, ...patch } : a));
+      return {
+        ...v,
+        attributes,
+        sku: skuTouchedRef.current ? v.sku : generateVariantSku(productName, attributes),
+      };
+    });
+  }
+
+  function handleSkuChange(sku: string) {
+    skuTouchedRef.current = true;
+    setValues((v) => ({ ...v, sku }));
   }
 
   function addAttr() {
@@ -107,34 +119,46 @@ export function VariantFormDialog({
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label>Atributos</Label>
-              {values.attributes.map((attr, i) => (
-                <div key={i} className="flex items-center gap-2">
-                  <Input
-                    list="attribute-names"
-                    value={attr.name}
-                    onChange={(e) => patchAttr(i, { name: e.target.value })}
-                    placeholder="Talla"
-                    className="w-32"
-                  />
-                  <Input
-                    value={attr.value}
-                    onChange={(e) => patchAttr(i, { value: e.target.value })}
-                    placeholder="M"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeAttr(i)}
-                    className="shrink-0 text-muted-foreground hover:text-destructive"
-                  >
-                    <X className="size-4" />
-                  </button>
-                </div>
-              ))}
+              {values.attributes.map((attr, i) => {
+                const suggestedValues = SUGGESTED_ATTRIBUTE_VALUES[attr.name];
+                const valueListId = suggestedValues ? `attribute-values-${attr.name}` : undefined;
+                return (
+                  <div key={i} className="flex items-center gap-2">
+                    <Input
+                      list="attribute-names"
+                      value={attr.name}
+                      onChange={(e) => patchAttr(i, { name: e.target.value })}
+                      placeholder="Talla"
+                      className="w-32"
+                    />
+                    <Input
+                      list={valueListId}
+                      value={attr.value}
+                      onChange={(e) => patchAttr(i, { value: e.target.value })}
+                      placeholder="M"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeAttr(i)}
+                      className="shrink-0 text-muted-foreground hover:text-destructive"
+                    >
+                      <X className="size-4" />
+                    </button>
+                  </div>
+                );
+              })}
               <datalist id="attribute-names">
                 {COMMON_ATTRIBUTE_NAMES.map((n) => (
                   <option key={n} value={n} />
                 ))}
               </datalist>
+              {Object.entries(SUGGESTED_ATTRIBUTE_VALUES).map(([name, suggestions]) => (
+                <datalist key={name} id={`attribute-values-${name}`}>
+                  {suggestions.map((s) => (
+                    <option key={s} value={s} />
+                  ))}
+                </datalist>
+              ))}
               <Button type="button" variant="ghost" size="sm" onClick={addAttr}>
                 <Plus /> Agregar atributo
               </Button>
@@ -178,8 +202,8 @@ export function VariantFormDialog({
               <Input
                 id="variantSku"
                 value={values.sku}
-                onChange={(e) => setValues((v) => ({ ...v, sku: e.target.value }))}
-                placeholder="CAM-M-NEG"
+                onChange={(e) => handleSkuChange(e.target.value)}
+                placeholder="Se genera solo desde los atributos"
               />
             </div>
           </div>

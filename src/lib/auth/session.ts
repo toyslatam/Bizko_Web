@@ -1,6 +1,7 @@
 import "server-only";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { ALL_FEATURE_KEYS, type Company, type CompanyMember, type FeatureKey, type Plan, type Profile, type Subscription } from "@/types/database";
 
 export const ACTIVE_COMPANY_COOKIE = "bizko_active_company";
@@ -38,6 +39,22 @@ export async function getSessionContext(): Promise<SessionContext | null> {
   } = await supabase.auth.getUser();
 
   if (!user) return null;
+
+  // Si esta persona aceptó una invitación (Configuración → Equipo), su
+  // membresía nace "invited" — en cuanto llega hasta acá ya tiene una sesión
+  // válida de Supabase Auth, así que se activa sola. Sin esto, alguien que
+  // acaba de aceptar quedaría sin activeCompany y lo mandaría a /onboarding.
+  // RLS de company_members solo deja escribir al OWNER (no a uno mismo), así
+  // que esto necesita el service role — si no está configurado (modo demo),
+  // simplemente se omite en vez de fallar.
+  const admin = createAdminClient();
+  if (admin) {
+    await admin
+      .from("company_members")
+      .update({ status: "active" })
+      .eq("user_id", user.id)
+      .eq("status", "invited");
+  }
 
   const [{ data: profile }, { data: memberships }, { data: adminRow }] = await Promise.all([
     supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
