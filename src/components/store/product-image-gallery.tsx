@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Image from "next/image";
-import { Package } from "lucide-react";
+import { ChevronLeft, ChevronRight, Package } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { PublicProductImage } from "@/types/database";
 
@@ -54,11 +54,18 @@ export function ProductImageGallery({
     return <Image src={slides[0]} alt="" fill className="object-cover" sizes="(min-width: 1024px) 500px, 600px" />;
   }
 
+  function scrollToSlide(index: number) {
+    const container = containerRef.current;
+    const target = slideRefs.current[index];
+    if (!container || !target) return;
+    container.scrollTo({ left: target.offsetLeft, behavior: "smooth" });
+  }
+
   return (
-    <div className="relative size-full">
+    <div className="group/gallery relative size-full">
       <div
         ref={containerRef}
-        className="flex size-full snap-x snap-mandatory overflow-x-auto scroll-smooth"
+        className="flex size-full snap-x snap-mandatory overflow-x-auto scroll-smooth [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {slides.map((url, i) => (
           <div
@@ -79,6 +86,27 @@ export function ProductImageGallery({
           </div>
         ))}
       </div>
+
+      {activeIndex > 0 && (
+        <button
+          type="button"
+          onClick={() => scrollToSlide(activeIndex - 1)}
+          aria-label="Foto anterior"
+          className="absolute top-1/2 left-3 flex size-8 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white opacity-0 backdrop-blur-sm transition-opacity group-hover/gallery:opacity-100 hover:bg-black/60 focus-visible:opacity-100"
+        >
+          <ChevronLeft className="size-4" />
+        </button>
+      )}
+      {activeIndex < slides.length - 1 && (
+        <button
+          type="button"
+          onClick={() => scrollToSlide(activeIndex + 1)}
+          aria-label="Foto siguiente"
+          className="absolute top-1/2 right-3 flex size-8 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white opacity-0 backdrop-blur-sm transition-opacity group-hover/gallery:opacity-100 hover:bg-black/60 focus-visible:opacity-100"
+        >
+          <ChevronRight className="size-4" />
+        </button>
+      )}
 
       <div className="pointer-events-none absolute inset-x-0 bottom-3 flex justify-center gap-1.5">
         {slides.map((_, i) => (
