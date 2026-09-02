@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { AuthTokenRedirect } from "@/components/auth-token-redirect";
 import { BUSINESS_MODULES } from "@/modules/registry";
 import { createClient } from "@/lib/supabase/server";
 import { formatPlanPrice } from "@/lib/plans";
@@ -28,6 +29,7 @@ export default async function LandingPage() {
 
   return (
     <div className="flex min-h-dvh flex-col">
+      <AuthTokenRedirect />
       <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-5 sm:px-6">
         <div className="flex items-center gap-2">
           <Image src="/files/app_icon.svg" alt="" width={32} height={32} className="rounded-lg" />
