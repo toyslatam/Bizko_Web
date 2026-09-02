@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getSessionContext } from "@/lib/auth/session";
 import { PageHeader } from "@/components/ui/page-header";
+import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CompanySettingsForm } from "@/components/settings/company-settings-form";
 import { TeamPanel } from "@/components/settings/team-panel";
@@ -64,37 +65,53 @@ export default async function ConfiguracionPage({
           <TabsTrigger value="equipo">Usuarios y equipo</TabsTrigger>
           <TabsTrigger value="plan">Plan y suscripción</TabsTrigger>
         </TabsList>
-        <TabsContent value="perfil" className="pt-4">
-          <ProfileForm
-            profile={
-              session.profile ?? {
-                id: session.userId,
-                email: session.email,
-                first_name: null,
-                last_name: null,
-                phone: null,
-                avatar_url: null,
-                created_at: "",
-                updated_at: "",
-              }
-            }
-          />
+        <TabsContent value="perfil" className="mt-6">
+          <Card>
+            <CardContent className="py-2">
+              <ProfileForm
+                profile={
+                  session.profile ?? {
+                    id: session.userId,
+                    email: session.email,
+                    first_name: null,
+                    last_name: null,
+                    phone: null,
+                    avatar_url: null,
+                    created_at: "",
+                    updated_at: "",
+                  }
+                }
+              />
+            </CardContent>
+          </Card>
         </TabsContent>
-        <TabsContent value="negocio" className="pt-4">
-          <CompanySettingsForm company={session.activeCompany} canEdit={isOwner} />
+        <TabsContent value="negocio" className="mt-6">
+          <Card>
+            <CardContent className="py-2">
+              <CompanySettingsForm company={session.activeCompany} canEdit={isOwner} />
+            </CardContent>
+          </Card>
         </TabsContent>
-        <TabsContent value="delivery" className="pt-4">
-          <DeliverySettingsForm company={session.activeCompany} canEdit={isOwner} />
+        <TabsContent value="delivery" className="mt-6">
+          <Card>
+            <CardContent className="py-2">
+              <DeliverySettingsForm company={session.activeCompany} canEdit={isOwner} />
+            </CardContent>
+          </Card>
         </TabsContent>
-        <TabsContent value="equipo" className="pt-4">
-          <TeamPanel
-            companyId={session.activeCompany.id}
-            members={team}
-            currentUserId={session.userId}
-            canManage={isOwner}
-          />
+        <TabsContent value="equipo" className="mt-6">
+          <Card>
+            <CardContent className="py-2">
+              <TeamPanel
+                companyId={session.activeCompany.id}
+                members={team}
+                currentUserId={session.userId}
+                canManage={isOwner}
+              />
+            </CardContent>
+          </Card>
         </TabsContent>
-        <TabsContent value="plan" className="pt-4">
+        <TabsContent value="plan" className="mt-6">
           <PlanSubscriptionPanel
             subscription={session.activeSubscription}
             currentPlan={session.activePlan}

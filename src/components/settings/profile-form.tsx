@@ -30,16 +30,16 @@ export function ProfileForm({ profile }: { profile: Profile }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-md space-y-4">
-      <div className="space-y-1.5">
+    <form onSubmit={handleSubmit} className="max-w-md space-y-6 py-2">
+      <div className="space-y-2">
         <Label htmlFor="profileEmail">Correo</Label>
         <Input id="profileEmail" value={profile.email} disabled />
         <p className="text-xs text-muted-foreground">
           Para cambiar tu correo, contacta a soporte.
         </p>
       </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-1.5">
+      <div className="grid grid-cols-2 gap-5">
+        <div className="space-y-2">
           <Label htmlFor="firstName">Nombre</Label>
           <Input
             id="firstName"
@@ -48,7 +48,7 @@ export function ProfileForm({ profile }: { profile: Profile }) {
             placeholder="Sofía"
           />
         </div>
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           <Label htmlFor="lastName">Apellido</Label>
           <Input
             id="lastName"
@@ -58,7 +58,7 @@ export function ProfileForm({ profile }: { profile: Profile }) {
           />
         </div>
       </div>
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         <Label htmlFor="profilePhone">Teléfono</Label>
         <Input
           id="profilePhone"
@@ -67,7 +67,7 @@ export function ProfileForm({ profile }: { profile: Profile }) {
           placeholder="300 123 4567"
         />
       </div>
-      <Button type="submit" disabled={saving}>
+      <Button type="submit" disabled={saving} className="mt-1">
         {saving ? "Guardando..." : "Guardar cambios"}
       </Button>
     </form>
