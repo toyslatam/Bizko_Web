@@ -78,6 +78,16 @@ export function generateSkuFromName(name: string): string {
     .join("-");
 }
 
+/** Negro o blanco, el que tenga mejor contraste sobre este color de fondo (WCAG luminancia relativa). */
+export function readableForeground(hexColor: string): "#0a0a0a" | "#ffffff" {
+  const hex = hexColor.replace("#", "");
+  if (hex.length !== 6) return "#ffffff";
+  const [r, g, b] = [0, 2, 4].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
+  const [lr, lg, lb] = [r, g, b].map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
+  const luminance = 0.2126 * lr + 0.7152 * lg + 0.0722 * lb;
+  return luminance > 0.5 ? "#0a0a0a" : "#ffffff";
+}
+
 export function customerFullName(customer: Pick<Customer, "first_name" | "last_name">) {
   return [customer.first_name, customer.last_name].filter(Boolean).join(" ");
 }

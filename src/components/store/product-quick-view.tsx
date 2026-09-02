@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { createClient } from "@/lib/supabase/client";
 import { ProductDetailActions } from "@/components/store/product-detail-actions";
+import { ProductImageGallery } from "@/components/store/product-image-gallery";
 import { formatCurrencyCents, formatVariantPriceRange } from "@/lib/format";
 import { UNIT_LABELS } from "@/lib/catalog";
 import { formatQuantity } from "@/lib/inventory";
@@ -20,6 +21,7 @@ import type {
   PublicModifierGroup,
   PublicModifierOption,
   PublicProduct,
+  PublicProductImage,
   PublicVariant,
   PublicVariantAttribute,
 } from "@/types/database";
@@ -45,6 +47,27 @@ export function ProductQuickView({
 }) {
   const [data, setData] = React.useState<QuickViewData | null>(null);
   const [loading, setLoading] = React.useState(false);
+  const [galleryImages, setGalleryImages] = React.useState<PublicProductImage[]>([]);
+
+  React.useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setGalleryImages([]);
+
+    async function loadGallery() {
+      const supabase = createClient();
+      const { data: galleryData } = await supabase.rpc("list_public_product_images", {
+        p_product_id: product.id,
+      });
+      if (!cancelled) setGalleryImages((galleryData as PublicProductImage[]) ?? []);
+    }
+
+    loadGallery();
+    return () => {
+      cancelled = true;
+    };
+  }, [open, product.id]);
 
   React.useEffect(() => {
     if (!open) return;
@@ -105,7 +128,9 @@ export function ProductQuickView({
 
         <div className="grid max-h-[85vh] grid-cols-1 overflow-y-auto sm:grid-cols-2 sm:overflow-visible">
           <div className="relative aspect-square w-full shrink-0 bg-muted sm:aspect-auto sm:h-full">
-            {product.image_url ? (
+            {galleryImages.length > 0 ? (
+              <ProductImageGallery primaryImageUrl={product.image_url} images={galleryImages} />
+            ) : product.image_url ? (
               <Image src={product.image_url} alt="" fill className="object-cover" sizes="500px" />
             ) : (
               <div className="flex size-full items-center justify-center">

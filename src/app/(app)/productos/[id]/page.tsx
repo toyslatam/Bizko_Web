@@ -13,6 +13,7 @@ import { ProductFormSheet } from "@/components/productos/product-form-sheet";
 import { VariantManager } from "@/components/productos/variant-manager";
 import { ModifierGroupManager } from "@/components/productos/modifier-group-manager";
 import { ComboItemsManager } from "@/components/productos/combo-items-manager";
+import { ProductGalleryManager } from "@/components/productos/product-gallery-manager";
 import { setProductStatusAction } from "@/app/(app)/productos/actions";
 import { UNIT_LABELS } from "@/lib/catalog";
 import { formatCurrencyCents } from "@/lib/format";
@@ -26,6 +27,7 @@ import type {
   ModifierOption,
   Product,
   ProductCategory,
+  ProductImage,
   ProductVariant,
   VariantAttribute,
 } from "@/types/database";
@@ -41,21 +43,23 @@ export default async function ProductDetailPage({
 
   const { id } = await params;
   const supabase = await createClient();
-  const [{ data: productData }, { data: categoriesData }, { data: movementsData }] = await Promise.all([
-    supabase.from("products").select("*").eq("id", id).maybeSingle(),
-    supabase
-      .from("product_categories")
-      .select("*")
-      .eq("company_id", session.activeCompany.id)
-      .eq("status", "active")
-      .order("name"),
-    supabase
-      .from("inventory_movements")
-      .select("*, product:products(name,unit), user:profiles(first_name,last_name,email)")
-      .eq("product_id", id)
-      .order("created_at", { ascending: false })
-      .limit(10),
-  ]);
+  const [{ data: productData }, { data: categoriesData }, { data: movementsData }, { data: galleryData }] =
+    await Promise.all([
+      supabase.from("products").select("*").eq("id", id).maybeSingle(),
+      supabase
+        .from("product_categories")
+        .select("*")
+        .eq("company_id", session.activeCompany.id)
+        .eq("status", "active")
+        .order("name"),
+      supabase
+        .from("inventory_movements")
+        .select("*, product:products(name,unit), user:profiles(first_name,last_name,email)")
+        .eq("product_id", id)
+        .order("created_at", { ascending: false })
+        .limit(10),
+      supabase.from("product_images").select("*").eq("product_id", id).order("sort_order"),
+    ]);
 
   const product = productData as Product | null;
   if (!product) notFound();
@@ -63,6 +67,7 @@ export default async function ProductDetailPage({
   const category = categories.find((c) => c.id === product.category_id);
   const margin = product.price_cents - product.cost_cents;
   const movements = (movementsData ?? []) as unknown as MovementRow[];
+  const galleryImages = (galleryData as ProductImage[]) ?? [];
   const canEditInventory = can(session.activeMembership?.role ?? "employee", "inventario.editar");
 
   let variants: ProductVariant[] = [];
@@ -179,6 +184,14 @@ export default async function ProductDetailPage({
           {product.description}
         </div>
       )}
+
+      <div className="mt-6">
+        <ProductGalleryManager
+          productId={product.id}
+          companyId={session.activeCompany.id}
+          images={galleryImages}
+        />
+      </div>
 
       {product.has_variants ? (
         <div className="mt-6">

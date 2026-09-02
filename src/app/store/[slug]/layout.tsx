@@ -11,6 +11,7 @@ import { SearchBar } from "@/components/store/search-bar";
 import { StoreNav } from "@/components/store/store-nav";
 import { StickyCartBar } from "@/components/store/sticky-cart-bar";
 import { getBusinessModule } from "@/modules/registry";
+import { readableForeground } from "@/lib/catalog";
 import type { PublicCategory, PublicCompany } from "@/types/database";
 
 export default async function StoreLayout({
@@ -39,7 +40,12 @@ export default async function StoreLayout({
   // las variables CSS de marca dentro del catálogo público; el panel interno
   // de bizko nunca las hereda porque este layout no lo envuelve.
   const accentStyle = company.accent_color
-    ? ({ "--brand": company.accent_color, "--primary": company.accent_color } as React.CSSProperties)
+    ? ({
+        "--brand": company.accent_color,
+        "--primary": company.accent_color,
+        "--brand-foreground": readableForeground(company.accent_color),
+        "--primary-foreground": readableForeground(company.accent_color),
+      } as React.CSSProperties)
     : undefined;
 
   return (

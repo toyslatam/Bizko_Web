@@ -1,16 +1,17 @@
 import { notFound } from "next/navigation";
-import Image from "next/image";
 import Link from "next/link";
 import type { Metadata } from "next";
-import { ArrowLeft, Package } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { ProductDetailActions } from "@/components/store/product-detail-actions";
+import { ProductImageGallery } from "@/components/store/product-image-gallery";
 import { formatCurrencyCents, formatVariantPriceRange } from "@/lib/format";
 import { UNIT_LABELS } from "@/lib/catalog";
 import { formatQuantity } from "@/lib/inventory";
 import type {
   PublicCompany,
   PublicProduct,
+  PublicProductImage,
   PublicVariant,
   PublicVariantAttribute,
   PublicModifierGroup,
@@ -73,6 +74,9 @@ export default async function PublicProductPage({ params }: ProductPageProps) {
   let modifierOptions: PublicModifierOption[] = [];
   let comboItems: PublicComboItem[] = [];
 
+  const { data: galleryData } = await supabase.rpc("list_public_product_images", { p_product_id: product.id });
+  const galleryImages = (galleryData as PublicProductImage[]) ?? [];
+
   if (product.has_variants) {
     const [{ data: variantsData }, { data: attributesData }] = await Promise.all([
       supabase.rpc("list_public_variants", { p_product_id: product.id }),
@@ -102,13 +106,7 @@ export default async function PublicProductPage({ params }: ProductPageProps) {
 
       <div className="overflow-hidden rounded-2xl border border-border bg-card lg:grid lg:grid-cols-2">
         <div className="relative aspect-square w-full bg-muted">
-          {product.image_url ? (
-            <Image src={product.image_url} alt="" fill className="object-cover" sizes="(min-width: 1024px) 500px, 600px" />
-          ) : (
-            <div className="flex size-full items-center justify-center">
-              <Package className="size-12 text-muted-foreground" />
-            </div>
-          )}
+          <ProductImageGallery primaryImageUrl={product.image_url} images={galleryImages} />
         </div>
 
         <div className="space-y-3 p-4 lg:p-6">

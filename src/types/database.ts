@@ -371,6 +371,21 @@ export interface Product {
   updated_at: string;
 }
 
+/** Foto adicional de un producto (además de `products.image_url`) — para la galería/carrusel del detalle. */
+export interface ProductImage {
+  id: string;
+  product_id: string;
+  image_url: string;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface PublicProductImage {
+  id: string;
+  image_url: string;
+  sort_order: number;
+}
+
 /** Variante de un producto (boutique: talla/color/etc). Stock independiente del producto. */
 // =============================================================================
 // Vertical de restaurantes y comida rápida — modificadores, combos, mesas.
