@@ -84,8 +84,9 @@ export default async function ProductDetailPage({
     attributesByVariant = groupAttributesByVariant((attrsData as VariantAttribute[]) ?? []);
   }
 
+  const isFoodBusiness = session.activeCompany.business_type === "food";
   let modifierGroups: (ModifierGroup & { modifier_options: ModifierOption[] })[] = [];
-  if (!product.is_combo && !product.is_ingredient) {
+  if (isFoodBusiness && !product.is_combo && !product.is_ingredient) {
     const { data: groupsData } = await supabase
       .from("modifier_groups")
       .select("*, modifier_options(*)")
@@ -97,7 +98,7 @@ export default async function ProductDetailPage({
   let comboItems: ComboItem[] = [];
   const comboComponentsById = new Map<string, Pick<Product, "name" | "unit">>();
   let comboAvailableProducts: Product[] = [];
-  if (product.is_combo) {
+  if (isFoodBusiness && product.is_combo) {
     const { data: comboItemsData } = await supabase
       .from("combo_items")
       .select("*")
@@ -154,7 +155,12 @@ export default async function ProductDetailPage({
           </div>
         </div>
         <div className="flex shrink-0 gap-2">
-          <ProductFormSheet companyId={session.activeCompany.id} categories={categories} product={product} />
+          <ProductFormSheet
+            companyId={session.activeCompany.id}
+            businessType={session.activeCompany.business_type}
+            categories={categories}
+            product={product}
+          />
           <ToggleStatusButton
             status={product.status}
             entityLabel="Producto"
@@ -249,20 +255,21 @@ export default async function ProductDetailPage({
         </div>
       )}
 
-      {product.is_combo ? (
-        <div className="mt-6">
-          <ComboItemsManager
-            comboProductId={product.id}
-            items={comboItems}
-            componentsById={comboComponentsById}
-            availableProducts={comboAvailableProducts}
-          />
-        </div>
-      ) : !product.is_ingredient ? (
-        <div className="mt-6">
-          <ModifierGroupManager productId={product.id} groups={modifierGroups} />
-        </div>
-      ) : null}
+      {isFoodBusiness &&
+        (product.is_combo ? (
+          <div className="mt-6">
+            <ComboItemsManager
+              comboProductId={product.id}
+              items={comboItems}
+              componentsById={comboComponentsById}
+              availableProducts={comboAvailableProducts}
+            />
+          </div>
+        ) : !product.is_ingredient ? (
+          <div className="mt-6">
+            <ModifierGroupManager productId={product.id} groups={modifierGroups} />
+          </div>
+        ) : null)}
     </div>
   );
 }

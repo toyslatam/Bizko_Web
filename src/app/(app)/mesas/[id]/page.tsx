@@ -25,6 +25,7 @@ export default async function TableDetailPage({ params }: { params: Promise<{ id
   const session = await getSessionContext();
   if (!session) redirect("/login");
   if (!session.activeCompany) redirect("/onboarding");
+  if (session.activeCompany.business_type !== "food") redirect("/dashboard");
 
   const { id } = await params;
   const supabase = await createClient();

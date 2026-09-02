@@ -34,7 +34,7 @@ import {
 } from "@/app/(app)/productos/actions";
 import { uploadCompanyFile } from "@/lib/storage";
 import { UNIT_LABELS, generateSkuFromName } from "@/lib/catalog";
-import type { Product, ProductCategory, ProductUnit } from "@/types/database";
+import type { BusinessType, Product, ProductCategory, ProductUnit } from "@/types/database";
 
 const UNITS = Object.keys(UNIT_LABELS) as ProductUnit[];
 
@@ -59,13 +59,16 @@ const EMPTY: ProductInput = {
 
 export function ProductFormSheet({
   companyId,
+  businessType,
   categories,
   product,
 }: {
   companyId: string;
+  businessType: BusinessType;
   categories: ProductCategory[];
   product?: Product;
 }) {
+  const isFoodBusiness = businessType === "food";
   const router = useRouter();
   const isEdit = Boolean(product);
   const [open, setOpen] = React.useState(false);
@@ -356,39 +359,43 @@ export function ProductFormSheet({
                 onCheckedChange={(checked) => patch("isFeatured", checked)}
               />
             </div>
-            <div className="flex items-center justify-between rounded-lg border border-border px-3 py-2.5">
-              <div>
-                <p className="text-sm font-medium text-foreground">Es un insumo</p>
-                <p className="text-xs text-muted-foreground">
-                  Materia prima (ej. carne, pan, queso) — no se vende directo, solo se controla en Inventario.
-                </p>
-              </div>
-              <Switch
-                checked={values.isIngredient}
-                onCheckedChange={(checked) => {
-                  patch("isIngredient", checked);
-                  if (checked) patch("isPublished", false);
-                }}
-              />
-            </div>
-            <div className="flex items-center justify-between rounded-lg border border-border px-3 py-2.5">
-              <div>
-                <p className="text-sm font-medium text-foreground">Es un combo</p>
-                <p className="text-xs text-muted-foreground">
-                  Incluye varios productos (ej. Combo Hamburguesa = hamburguesa + papas + bebida).
-                </p>
-              </div>
-              <Switch
-                checked={values.isCombo}
-                onCheckedChange={(checked) => patch("isCombo", checked)}
-              />
-            </div>
-            {values.isCombo && (
-              <p className="text-xs text-muted-foreground">
-                {isEdit
-                  ? "Los productos incluidos se configuran desde el detalle del producto."
-                  : "Después de crear el producto, agrega lo que incluye desde el detalle."}
-              </p>
+            {isFoodBusiness && (
+              <>
+                <div className="flex items-center justify-between rounded-lg border border-border px-3 py-2.5">
+                  <div>
+                    <p className="text-sm font-medium text-foreground">Es un insumo</p>
+                    <p className="text-xs text-muted-foreground">
+                      Materia prima (ej. carne, pan, queso) — no se vende directo, solo se controla en Inventario.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={values.isIngredient}
+                    onCheckedChange={(checked) => {
+                      patch("isIngredient", checked);
+                      if (checked) patch("isPublished", false);
+                    }}
+                  />
+                </div>
+                <div className="flex items-center justify-between rounded-lg border border-border px-3 py-2.5">
+                  <div>
+                    <p className="text-sm font-medium text-foreground">Es un combo</p>
+                    <p className="text-xs text-muted-foreground">
+                      Incluye varios productos (ej. Combo Hamburguesa = hamburguesa + papas + bebida).
+                    </p>
+                  </div>
+                  <Switch
+                    checked={values.isCombo}
+                    onCheckedChange={(checked) => patch("isCombo", checked)}
+                  />
+                </div>
+                {values.isCombo && (
+                  <p className="text-xs text-muted-foreground">
+                    {isEdit
+                      ? "Los productos incluidos se configuran desde el detalle del producto."
+                      : "Después de crear el producto, agrega lo que incluye desde el detalle."}
+                  </p>
+                )}
+              </>
             )}
           </div>
 

@@ -11,6 +11,7 @@ export default async function CocinaPage() {
   const session = await getSessionContext();
   if (!session) redirect("/login");
   if (!session.activeCompany) redirect("/onboarding");
+  if (session.activeCompany.business_type !== "food") redirect("/dashboard");
 
   const supabase = await createClient();
   const companyId = session.activeCompany.id;

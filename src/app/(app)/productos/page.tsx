@@ -72,7 +72,11 @@ export default async function ProductosPage({ searchParams }: PageProps) {
         title="Productos"
         description="Administra el catálogo de productos de tu negocio."
         actions={
-          <ProductFormSheet companyId={companyId} categories={(categories as ProductCategory[]) ?? []} />
+          <ProductFormSheet
+            companyId={companyId}
+            businessType={session.activeCompany.business_type}
+            categories={(categories as ProductCategory[]) ?? []}
+          />
         }
       />
 
@@ -98,7 +102,11 @@ export default async function ProductosPage({ searchParams }: PageProps) {
           title="Todavía no tienes productos"
           description="Agrega tu primer producto para empezar a construir tu catálogo."
           action={
-            <ProductFormSheet companyId={companyId} categories={(categories as ProductCategory[]) ?? []} />
+            <ProductFormSheet
+            companyId={companyId}
+            businessType={session.activeCompany.business_type}
+            categories={(categories as ProductCategory[]) ?? []}
+          />
           }
         />
       )}
