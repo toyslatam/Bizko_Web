@@ -24,6 +24,7 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirect") || "/dashboard";
   const expired = searchParams.get("expired") === "1";
+  const linkExpired = searchParams.get("linkExpired") === "1";
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [loading, setLoading] = React.useState(false);
@@ -57,6 +58,13 @@ function LoginForm() {
         <div className="mt-4 flex items-start gap-2 rounded-lg bg-warning/15 px-3 py-2.5 text-sm text-warning-foreground">
           <AlertCircle className="mt-0.5 size-4 shrink-0 text-warning" />
           Tu sesión expiró. Inicia sesión nuevamente para continuar.
+        </div>
+      )}
+      {linkExpired && (
+        <div className="mt-4 flex items-start gap-2 rounded-lg bg-warning/15 px-3 py-2.5 text-sm text-warning-foreground">
+          <AlertCircle className="mt-0.5 size-4 shrink-0 text-warning" />
+          Ese enlace ya expiró. Pide que te reenvíen la invitación o el correo de
+          recuperación, e intenta de nuevo con el nuevo enlace.
         </div>
       )}
 

@@ -11,8 +11,11 @@ import * as React from "react";
  */
 export function AuthTokenRedirect() {
   React.useEffect(() => {
-    if (window.location.hash.includes("access_token")) {
-      window.location.replace(`/actualizar-password${window.location.hash}`);
+    const hash = window.location.hash;
+    if (hash.includes("access_token")) {
+      window.location.replace(`/actualizar-password${hash}`);
+    } else if (hash.includes("error=")) {
+      window.location.replace("/login?linkExpired=1");
     }
   }, []);
 
