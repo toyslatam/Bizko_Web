@@ -20,10 +20,39 @@ export default function UpdatePasswordPage() {
 
   React.useEffect(() => {
     const supabase = createClient();
-    supabase.auth.getSession().then(({ data }) => {
-      setHasSession(Boolean(data.session));
-      setChecking(false);
+    let resolved = false;
+
+    // El token de invitación/recuperación viene en el hash de la URL — el
+    // cliente de Supabase lo procesa de forma asíncrona al montar. Un solo
+    // getSession() inmediato puede ganarle esa carrera y reportar "sin
+    // sesión" antes de que el token termine de procesarse, así que también
+    // se escucha el evento que dispara justo cuando la sesión queda lista.
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session && !resolved) {
+        resolved = true;
+        setHasSession(true);
+        setChecking(false);
+      }
     });
+
+    supabase.auth.getSession().then(({ data }) => {
+      if (resolved) return;
+      if (data.session) {
+        resolved = true;
+        setHasSession(true);
+        setChecking(false);
+        return;
+      }
+      // Sin sesión todavía — puede ser que el hash aún se esté procesando.
+      // Se da un margen antes de declarar el enlace inválido.
+      window.setTimeout(() => {
+        if (!resolved) setChecking(false);
+      }, 1500);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
