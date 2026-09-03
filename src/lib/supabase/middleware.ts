@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PUBLIC_PATHS = ["/login", "/registro", "/recuperar", "/actualizar-password", "/store"];
+const PUBLIC_PATHS = ["/login", "/registro", "/recuperar", "/actualizar-password", "/verificar-codigo", "/store"];
 // /login se excluye a propósito: un usuario ya autenticado debe poder abrir
 // /login para iniciar sesión con OTRA cuenta (ej. su cuenta de negocio vs.
 // su cuenta de Super Admin) sin tener que cerrar sesión primero. /registro

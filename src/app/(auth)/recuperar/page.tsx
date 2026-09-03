@@ -20,7 +20,7 @@ export default function RecoverPasswordPage() {
     try {
       const supabase = createClient();
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/actualizar-password`,
+        redirectTo: `${window.location.origin}/verificar-codigo?email=${encodeURIComponent(email)}&type=recovery`,
       });
       if (error) throw error;
       setSent(true);
@@ -43,7 +43,7 @@ export default function RecoverPasswordPage() {
           Revisa tu correo
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Te enviamos un enlace a <span className="font-medium">{email}</span> para
+          Te enviamos un código a <span className="font-medium">{email}</span> para
           que puedas crear una nueva contraseña.
         </p>
         <Link href="/login" className="mt-6 text-sm font-medium text-brand hover:underline">
@@ -59,7 +59,7 @@ export default function RecoverPasswordPage() {
         Recupera tu contraseña
       </h1>
       <p className="mt-1 text-sm text-muted-foreground">
-        Te enviaremos un enlace para crear una nueva.
+        Te enviaremos un código para crear una nueva.
       </p>
 
       <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
@@ -75,7 +75,7 @@ export default function RecoverPasswordPage() {
           />
         </div>
         <Button type="submit" className="w-full" disabled={loading}>
-          {loading ? "Enviando..." : "Enviar enlace"}
+          {loading ? "Enviando..." : "Enviar código"}
         </Button>
       </form>
 

@@ -204,7 +204,7 @@ export async function sendTeamInvitationAction(
 
   if (!userId) {
     const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(trimmedEmail, {
-      redirectTo: await inviteRedirectUrl(),
+      redirectTo: await inviteRedirectUrl(trimmedEmail),
     });
     if (inviteError || !invited?.user) {
       return { error: inviteError?.message || "No pudimos enviar la invitación. Intenta de nuevo." };
@@ -228,12 +228,19 @@ export async function sendTeamInvitationAction(
   return { ok: true, alreadyHadAccount };
 }
 
-/** URL a la que Supabase redirige tras el link del correo (crear contraseña) — usa el host real del request, nunca uno fijo. */
-async function inviteRedirectUrl(): Promise<string> {
+/**
+ * URL a la que Supabase redirige tras el link del correo — usa el host real
+ * del request, nunca uno fijo. Apunta a /verificar-codigo (código de 6
+ * dígitos, no un link mágico de un solo uso): Gmail y otros correos a veces
+ * "visitan" los links de un correo por escaneo de seguridad antes de que la
+ * persona le dé clic, y eso deja gastado un link mágico de un solo uso —
+ * un código que se escribe a mano no se puede gastar así.
+ */
+async function inviteRedirectUrl(email: string): Promise<string> {
   const headerList = await headers();
   const host = headerList.get("host") ?? "";
   const protocol = headerList.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
-  return `${protocol}://${host}/actualizar-password`;
+  return `${protocol}://${host}/verificar-codigo?email=${encodeURIComponent(email)}&type=invite`;
 }
 
 /**
@@ -281,7 +288,7 @@ export async function resendTeamInvitationAction(
   await admin.auth.admin.deleteUser(member.user_id);
 
   const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(email, {
-    redirectTo: await inviteRedirectUrl(),
+    redirectTo: await inviteRedirectUrl(email),
   });
   if (inviteError || !invited?.user) {
     return { error: inviteError?.message || "No pudimos reenviar la invitación." };
