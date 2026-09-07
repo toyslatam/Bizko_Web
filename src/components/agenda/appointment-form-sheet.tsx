@@ -26,23 +26,18 @@ import {
 } from "@/components/ui/sheet";
 import { CustomerCombobox } from "@/components/ventas/customer-combobox";
 import { createAppointmentAction, type AppointmentInput } from "@/app/(app)/agenda/actions";
-import type { CompanyMember, Customer, Profile, Service } from "@/types/database";
-
-function memberLabel(member: CompanyMember & { profile: Profile }) {
-  const name = [member.profile.first_name, member.profile.last_name].filter(Boolean).join(" ");
-  return name || member.profile.email;
-}
+import type { Customer, Professional, Service } from "@/types/database";
 
 export function AppointmentFormSheet({
   date,
   customers,
   services,
-  members,
+  professionals,
 }: {
   date: string;
   customers: Customer[];
   services: Service[];
-  members: (CompanyMember & { profile: Profile })[];
+  professionals: Professional[];
 }) {
   const router = useRouter();
   const [open, setOpen] = React.useState(false);
@@ -50,10 +45,9 @@ export function AppointmentFormSheet({
     () => ({
       appointmentDate: date,
       startTime: "",
-      endTime: "",
       customerId: "",
       serviceId: "",
-      employeeId: "",
+      professionalId: "",
       notes: "",
     }),
     [date],
@@ -108,7 +102,7 @@ export function AppointmentFormSheet({
 
         <form onSubmit={handleSubmit} className="flex flex-1 flex-col gap-5 overflow-y-auto px-4">
           <div className="space-y-3">
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label htmlFor="appointmentDate">Fecha</Label>
                 <Input
@@ -134,15 +128,6 @@ export function AppointmentFormSheet({
                 {errors.startTime && (
                   <p className="text-xs text-destructive">{errors.startTime}</p>
                 )}
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="endTime">Hora fin</Label>
-                <Input
-                  id="endTime"
-                  type="time"
-                  value={values.endTime}
-                  onChange={(e) => patch("endTime", e.target.value)}
-                />
               </div>
             </div>
 
@@ -176,19 +161,19 @@ export function AppointmentFormSheet({
             </div>
 
             <div className="space-y-1.5">
-              <Label>Empleado</Label>
+              <Label>Profesional</Label>
               <Select
-                value={values.employeeId || "none"}
-                onValueChange={(v) => patch("employeeId", v === "none" ? "" : v)}
+                value={values.professionalId || "none"}
+                onValueChange={(v) => patch("professionalId", v === "none" ? "" : v)}
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Selecciona un empleado" />
+                  <SelectValue placeholder="Selecciona un profesional" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">Sin asignar</SelectItem>
-                  {members.map((m) => (
-                    <SelectItem key={m.id} value={m.user_id}>
-                      {memberLabel(m)}
+                  {professionals.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.name}
                     </SelectItem>
                   ))}
                 </SelectContent>

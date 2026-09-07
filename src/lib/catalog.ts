@@ -37,6 +37,7 @@ export const STATUS_LABELS: Record<EntityStatus, string> = {
 export const APPOINTMENT_STATUS_LABELS: Record<AppointmentStatus, string> = {
   pending: "Pendiente",
   confirmed: "Confirmada",
+  in_progress: "En atención",
   completed: "Completada",
   canceled: "Cancelada",
   no_show: "No asistió",

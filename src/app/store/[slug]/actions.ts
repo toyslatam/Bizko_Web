@@ -72,3 +72,43 @@ export async function createPublicOrderAction(input: CheckoutInput): Promise<Che
 
   return { ok: true, orderId: data as string };
 }
+
+export interface BookAppointmentInput {
+  slug: string;
+  serviceId: string;
+  professionalId: string;
+  appointmentDate: string;
+  startTime: string;
+  customerName: string;
+  customerPhone: string;
+  notes: string;
+}
+
+type BookAppointmentResult = { ok: true; appointmentId: string } | { error: string };
+
+/**
+ * Server Action pública (sin sesión): cualquier visitante del catálogo la
+ * puede llamar. Toda la validación real (disponibilidad, existencia del
+ * servicio/profesional, datos obligatorios) ocurre dentro de
+ * create_public_appointment() en Postgres — esta acción es solo el puente
+ * hacia esa RPC, nunca confiar en el horario calculado en el navegador.
+ */
+export async function createPublicAppointmentAction(input: BookAppointmentInput): Promise<BookAppointmentResult> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("create_public_appointment", {
+    p_company_slug: input.slug,
+    p_service_id: input.serviceId,
+    p_professional_id: input.professionalId,
+    p_appointment_date: input.appointmentDate,
+    p_start_time: input.startTime,
+    p_customer_name: input.customerName,
+    p_customer_phone: input.customerPhone,
+    p_notes: input.notes,
+  });
+
+  if (error || !data) {
+    return { error: error?.message || "No pudimos reservar tu cita. Intenta de nuevo." };
+  }
+
+  return { ok: true, appointmentId: data as string };
+}

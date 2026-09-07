@@ -260,18 +260,68 @@ export default async function DashboardPage() {
     );
   } else if (businessType === "barbershop") {
     const todayStr = startOfToday.toISOString().slice(0, 10);
-    const { count: todayAppointments } = await supabase
-      .from("appointments")
-      .select("id", { count: "exact", head: true })
-      .eq("company_id", companyId)
-      .eq("appointment_date", todayStr);
+    const nowTimeStr = new Intl.DateTimeFormat("en-GB", {
+      timeZone,
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hourCycle: "h23",
+    }).format(now);
+
+    const [{ count: todayAppointments }, { data: todayAppointmentRows }] = await Promise.all([
+      supabase
+        .from("appointments")
+        .select("id", { count: "exact", head: true })
+        .eq("company_id", companyId)
+        .eq("appointment_date", todayStr),
+      supabase
+        .from("appointments")
+        .select(
+          "start_time, status, professional:professionals(name), customer:customers(first_name,last_name)",
+        )
+        .eq("company_id", companyId)
+        .eq("appointment_date", todayStr)
+        .not("status", "in", "(canceled,no_show)")
+        .order("start_time", { ascending: true }),
+    ]);
+
+    type TodayAppointmentRow = {
+      start_time: string;
+      status: string;
+      professional: { name: string } | null;
+      customer: { first_name: string | null; last_name: string | null } | null;
+    };
+    const appointmentRows = (todayAppointmentRows ?? []) as unknown as TodayAppointmentRow[];
+
+    const nextAppointment = appointmentRows.find((a) => a.start_time >= nowTimeStr);
+    const nextAppointmentLabel = nextAppointment
+      ? `${nextAppointment.start_time.slice(0, 5)} · ${
+          [nextAppointment.customer?.first_name, nextAppointment.customer?.last_name]
+            .filter(Boolean)
+            .join(" ") || "Sin cliente"
+        }${nextAppointment.professional?.name ? ` (${nextAppointment.professional.name})` : ""}`
+      : "Sin citas pendientes";
+
+    const professionalCounts = new Map<string, number>();
+    for (const a of appointmentRows) {
+      if (!a.professional?.name) continue;
+      professionalCounts.set(a.professional.name, (professionalCounts.get(a.professional.name) ?? 0) + 1);
+    }
+    const topProfessional = [...professionalCounts.entries()].sort((a, b) => b[1] - a[1])[0];
+
     verticalWidget = (
       <VerticalWidgetCard
         icon={CalendarClock}
         title="Agenda"
         href="/agenda"
         linkLabel="Ver agenda"
-        stats={[{ label: "citas hoy", value: String(todayAppointments ?? 0) }]}
+        stats={[
+          { label: "citas hoy", value: String(todayAppointments ?? 0) },
+          { label: "próxima cita", value: nextAppointmentLabel },
+          ...(topProfessional
+            ? [{ label: "profesional con más citas hoy", value: `${topProfessional[0]} (${topProfessional[1]})` }]
+            : []),
+        ]}
       />
     );
   } else if (businessType === "laundry") {

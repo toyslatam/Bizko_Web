@@ -6,7 +6,8 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { CategoryFilter } from "@/components/store/category-filter";
 import { SortDropdown } from "@/components/store/sort-dropdown";
 import { ProductCard } from "@/components/store/product-card";
-import type { PublicCategory, PublicCompany, PublicProduct } from "@/types/database";
+import { ServiceCard } from "@/components/store/service-card";
+import type { PublicCategory, PublicCompany, PublicProduct, PublicService } from "@/types/database";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -43,16 +44,23 @@ export default async function PublicStorePage({ params, searchParams }: PageProp
   const company = companyData as PublicCompany | null;
   if (!company) notFound();
 
-  const [{ data: categoriesData }, { data: productsData }, { data: priceRangesData }] = await Promise.all([
-    supabase.rpc("list_public_categories", { p_company_id: company.id }),
-    supabase.rpc("list_public_products", {
-      p_company_id: company.id,
-      p_category_id: categoria || null,
-      p_search: buscar || null,
-    }),
-    supabase.rpc("list_public_variant_price_ranges", { p_company_id: company.id }),
-  ]);
+  const isBarbershop = company.business_type === "barbershop";
 
+  const [{ data: categoriesData }, { data: productsData }, { data: priceRangesData }, { data: servicesData }] =
+    await Promise.all([
+      supabase.rpc("list_public_categories", { p_company_id: company.id }),
+      supabase.rpc("list_public_products", {
+        p_company_id: company.id,
+        p_category_id: categoria || null,
+        p_search: buscar || null,
+      }),
+      supabase.rpc("list_public_variant_price_ranges", { p_company_id: company.id }),
+      isBarbershop
+        ? supabase.rpc("list_public_services", { p_company_id: company.id })
+        : Promise.resolve({ data: [] as PublicService[] }),
+    ]);
+
+  const services = (servicesData as PublicService[]) ?? [];
   const categories = (categoriesData as PublicCategory[]) ?? [];
   let products = (productsData as PublicProduct[]) ?? [];
   const priceRangeByProduct = new Map<string, { min: number; max: number }>(
@@ -80,6 +88,18 @@ export default async function PublicStorePage({ params, searchParams }: PageProp
 
   return (
     <div className="space-y-5">
+      {isBarbershop && services.length > 0 && (
+        <div className="space-y-2">
+          <h2 className="font-heading text-base font-semibold text-foreground">Reservar una cita</h2>
+          <p className="text-sm text-muted-foreground">Elige un servicio para agendar con uno de nuestros profesionales.</p>
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 lg:gap-6 xl:grid-cols-4">
+            {services.map((s) => (
+              <ServiceCard key={s.id} slug={slug} service={s} />
+            ))}
+          </div>
+        </div>
+      )}
+
       {categories.length > 0 && <CategoryFilter categories={categories} />}
 
       {featured.length > 0 && (

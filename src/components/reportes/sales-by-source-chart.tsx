@@ -17,6 +17,7 @@ const SOURCE_COLORS: Record<SaleSource, string> = {
   delivery: "var(--chart-3)",
   table: "var(--chart-4)",
   takeout: "var(--chart-5)",
+  appointment: "var(--chart-1)",
 };
 
 export function SalesBySourceChart({ data }: { data: SalesBySourcePoint[] }) {

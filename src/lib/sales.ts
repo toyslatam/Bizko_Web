@@ -18,6 +18,7 @@ export const SALE_SOURCE_LABELS: Record<SaleSource, string> = {
   delivery: "Domicilio",
   table: "Mesa",
   takeout: "Para llevar",
+  appointment: "Cita",
 };
 
 export const GENERAL_CUSTOMER_VALUE = "general";

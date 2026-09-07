@@ -7,6 +7,7 @@ import {
   PawPrint,
   Wrench as WrenchIcon,
   UtensilsCrossed,
+  Scissors,
   type LucideIcon,
 } from "lucide-react";
 
@@ -70,10 +71,13 @@ export const BUSINESS_MODULES: BusinessModuleConfig[] = [
     type: "barbershop",
     slug: "barbershop",
     emoji: "💈",
-    name: "Barbería",
-    description: "Agenda de citas y servicios por barbero.",
-    plannedFeatures: ["Agenda de citas", "Servicios por barbero", "Recordatorios"],
-    navItems: [{ label: "Agenda", href: "/agenda", icon: CalendarClock }],
+    name: "Peluquería / Barbería / Salón de belleza",
+    description: "Agenda con profesionales, servicios con duración y comisiones.",
+    plannedFeatures: ["Agenda de citas", "Profesionales y comisiones", "Reserva desde el catálogo público", "Recordatorios"],
+    navItems: [
+      { label: "Agenda", href: "/agenda", icon: CalendarClock },
+      { label: "Profesionales", href: "/profesionales", icon: Scissors },
+    ],
   },
   {
     type: "laundry",

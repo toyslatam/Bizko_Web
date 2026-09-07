@@ -526,7 +526,7 @@ export interface Service {
 
 export type SaleStatus = "completed" | "voided";
 /** De dónde vino la venta — `catalog` la genera automáticamente un pedido entregado y pagado. */
-export type SaleSource = "pos" | "menu" | "delivery" | "table" | "takeout";
+export type SaleSource = "pos" | "menu" | "delivery" | "table" | "takeout" | "appointment";
 export type SaleItemType = "product" | "service";
 
 export interface Sale {
@@ -885,15 +885,17 @@ export interface Vehicle {
   updated_at: string;
 }
 
-export type AppointmentStatus = "pending" | "confirmed" | "completed" | "canceled" | "no_show";
+export type AppointmentStatus = "pending" | "confirmed" | "in_progress" | "completed" | "canceled" | "no_show";
 
-/** Barbería: agenda / citas. */
+/** Barbería/peluquería: agenda / citas. */
 export interface Appointment {
   id: string;
   company_id: string;
   customer_id: string | null;
   service_id: string | null;
   employee_id: string | null;
+  professional_id: string | null;
+  sale_id: string | null;
   appointment_date: string;
   start_time: string;
   end_time: string | null;
@@ -901,6 +903,53 @@ export interface Appointment {
   notes: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface Professional {
+  id: string;
+  company_id: string;
+  name: string;
+  photo_url: string | null;
+  specialty: string | null;
+  work_days: number[];
+  work_start_time: string;
+  work_end_time: string;
+  status: EntityStatus;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ServiceProfessional {
+  service_id: string;
+  professional_id: string;
+}
+
+export type CommissionType = "percentage" | "fixed";
+
+export interface CommissionRule {
+  id: string;
+  company_id: string;
+  professional_id: string;
+  service_id: string | null;
+  commission_type: CommissionType;
+  value: number;
+}
+
+export interface PublicService {
+  id: string;
+  category_id: string | null;
+  name: string;
+  description: string | null;
+  price_cents: number;
+  duration_minutes: number | null;
+  image_url: string | null;
+}
+
+export interface PublicProfessional {
+  id: string;
+  name: string;
+  photo_url: string | null;
+  specialty: string | null;
 }
 
 export type LaundryOrderStatus = "received" | "in_process" | "ready" | "delivered" | "canceled";

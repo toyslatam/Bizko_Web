@@ -16,12 +16,23 @@ import type { Appointment, AppointmentStatus } from "@/types/database";
 
 const STATUS_OPTIONS = Object.keys(APPOINTMENT_STATUS_LABELS) as AppointmentStatus[];
 
-export function AppointmentStatusSelect({ appointment }: { appointment: Appointment }) {
+export function AppointmentStatusSelect({
+  appointment,
+  onRequestComplete,
+}: {
+  appointment: Appointment;
+  onRequestComplete: () => void;
+}) {
   const router = useRouter();
   const [loading, setLoading] = React.useState(false);
 
   async function handleChange(value: string) {
     const status = value as AppointmentStatus;
+    if (status === "completed") {
+      onRequestComplete();
+      return;
+    }
+
     setLoading(true);
     const result = await setAppointmentStatusAction(appointment.id, status);
     setLoading(false);

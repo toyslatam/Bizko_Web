@@ -7,9 +7,10 @@ import { getSessionContext } from "@/lib/auth/session";
 import { StatusBadge } from "@/components/catalog/status-badge";
 import { ToggleStatusButton } from "@/components/catalog/toggle-status-button";
 import { ServiceFormSheet } from "@/components/servicios/service-form-sheet";
+import { ServiceProfessionalsSection } from "@/components/servicios/service-professionals-section";
 import { setServiceStatusAction } from "@/app/(app)/servicios/actions";
 import { formatCurrencyCents } from "@/lib/format";
-import type { Service, ServiceCategory } from "@/types/database";
+import type { Professional, Service, ServiceCategory } from "@/types/database";
 
 export default async function ServiceDetailPage({
   params,
@@ -22,20 +23,30 @@ export default async function ServiceDetailPage({
 
   const { id } = await params;
   const supabase = await createClient();
-  const [{ data: serviceData }, { data: categoriesData }] = await Promise.all([
-    supabase.from("services").select("*").eq("id", id).maybeSingle(),
-    supabase
-      .from("service_categories")
-      .select("*")
-      .eq("company_id", session.activeCompany.id)
-      .eq("status", "active")
-      .order("name"),
-  ]);
+  const [{ data: serviceData }, { data: categoriesData }, { data: professionalsData }, { data: assignedData }] =
+    await Promise.all([
+      supabase.from("services").select("*").eq("id", id).maybeSingle(),
+      supabase
+        .from("service_categories")
+        .select("*")
+        .eq("company_id", session.activeCompany.id)
+        .eq("status", "active")
+        .order("name"),
+      supabase
+        .from("professionals")
+        .select("*")
+        .eq("company_id", session.activeCompany.id)
+        .eq("status", "active")
+        .order("name"),
+      supabase.from("service_professionals").select("professional_id").eq("service_id", id),
+    ]);
 
   const service = serviceData as Service | null;
   if (!service) notFound();
   const categories = (categoriesData as ServiceCategory[]) ?? [];
   const category = categories.find((c) => c.id === service.category_id);
+  const professionals = (professionalsData ?? []) as Professional[];
+  const assignedProfessionalIds = (assignedData ?? []).map((row) => row.professional_id as string);
 
   return (
     <div className="max-w-2xl">
@@ -86,6 +97,17 @@ export default async function ServiceDetailPage({
           {service.description}
         </div>
       )}
+
+      <div className="mt-6">
+        <h2 className="mb-3 font-heading text-base font-semibold text-foreground">
+          Profesionales que lo realizan
+        </h2>
+        <ServiceProfessionalsSection
+          serviceId={service.id}
+          professionals={professionals}
+          assignedProfessionalIds={assignedProfessionalIds}
+        />
+      </div>
     </div>
   );
 }
