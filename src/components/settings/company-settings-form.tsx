@@ -14,9 +14,12 @@ import {
   updateCompanyBannerAction,
   updateCompanyAccentColorAction,
   updateCompanySlugAction,
+  updateFeatureToggleAction,
 } from "@/app/(app)/configuracion/actions";
 import { uploadCompanyFile } from "@/lib/storage";
 import { getBusinessModule } from "@/modules/registry";
+import { getToggleableFeaturesForBusiness } from "@/lib/features";
+import { Switch } from "@/components/ui/switch";
 import type { Company } from "@/types/database";
 
 const DEFAULT_ACCENT_COLOR = "#8b7cf6";
@@ -24,11 +27,14 @@ const DEFAULT_ACCENT_COLOR = "#8b7cf6";
 export function CompanySettingsForm({
   company,
   canEdit,
+  featureToggles,
 }: {
   company: Company;
   canEdit: boolean;
+  featureToggles: Record<string, boolean>;
 }) {
   const businessModule = getBusinessModule(company.business_type);
+  const toggleableFeatures = getToggleableFeaturesForBusiness(company.business_type);
   const [values, setValues] = React.useState({
     name: company.name,
     phone: company.phone ?? "",
@@ -226,6 +232,15 @@ export function CompanySettingsForm({
           Se aplica solo a los botones y categorías de tu catálogo público — el panel de administración se mantiene igual.
         </p>
       </div>
+
+      {toggleableFeatures.length > 0 && (
+        <FeatureTogglesSection
+          companyId={company.id}
+          canEdit={canEdit}
+          features={toggleableFeatures}
+          initialValues={featureToggles}
+        />
+      )}
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5 sm:col-span-2">
@@ -429,6 +444,55 @@ function StoreLink({ companyId, slug, canEdit }: { companyId: string; slug: stri
           <Copy /> Copiar enlace
         </Button>
       </div>
+    </div>
+  );
+}
+
+function FeatureTogglesSection({
+  companyId,
+  canEdit,
+  features,
+  initialValues,
+}: {
+  companyId: string;
+  canEdit: boolean;
+  features: { feature: string; name: string; hint: string; defaultEnabled: boolean }[];
+  initialValues: Record<string, boolean>;
+}) {
+  const [values, setValues] = React.useState(() =>
+    Object.fromEntries(features.map((f) => [f.feature, initialValues[f.feature] ?? f.defaultEnabled])),
+  );
+  const [savingFeature, setSavingFeature] = React.useState<string | null>(null);
+
+  async function handleToggle(feature: string, enabled: boolean) {
+    setValues((v) => ({ ...v, [feature]: enabled }));
+    setSavingFeature(feature);
+    const result = await updateFeatureToggleAction(companyId, feature, enabled);
+    setSavingFeature(null);
+    if ("error" in result) {
+      toast.error("No pudimos guardar el cambio", { description: result.error });
+      setValues((v) => ({ ...v, [feature]: !enabled }));
+      return;
+    }
+    toast.success(`${enabled ? "Activaste" : "Desactivaste"} ${features.find((f) => f.feature === feature)?.name}.`);
+  }
+
+  return (
+    <div className="space-y-2">
+      <Label>Módulos de tu negocio</Label>
+      {features.map((f) => (
+        <div key={f.feature} className="flex items-center justify-between rounded-lg border border-border px-3 py-2.5">
+          <div className="pr-3">
+            <p className="text-sm font-medium text-foreground">{f.name}</p>
+            <p className="text-xs text-muted-foreground">{f.hint}</p>
+          </div>
+          <Switch
+            checked={values[f.feature]}
+            disabled={!canEdit || savingFeature === f.feature}
+            onCheckedChange={(checked) => handleToggle(f.feature, checked)}
+          />
+        </div>
+      ))}
     </div>
   );
 }

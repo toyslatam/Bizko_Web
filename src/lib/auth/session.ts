@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ALL_FEATURE_KEYS, type Company, type CompanyMember, type FeatureKey, type Plan, type Profile, type Subscription } from "@/types/database";
+import { applyBusinessFeatureRules } from "@/lib/features";
 
 export const ACTIVE_COMPANY_COOKIE = "bizko_active_company";
 
@@ -83,23 +84,32 @@ export async function getSessionContext(): Promise<SessionContext | null> {
   let enabledFeatures = new Set<FeatureKey>();
 
   if (activeCompanyId) {
-    const [{ data: subscription }, { data: featureRows, error: featuresError }] = await Promise.all([
-      supabase
-        .from("subscriptions")
-        .select("*, plan:plans(*)")
-        .eq("company_id", activeCompanyId)
-        .maybeSingle(),
-      supabase.rpc("get_active_feature_keys", { p_company_id: activeCompanyId }),
-    ]);
+    const [{ data: subscription }, { data: featureRows, error: featuresError }, { data: toggleRows }] =
+      await Promise.all([
+        supabase
+          .from("subscriptions")
+          .select("*, plan:plans(*)")
+          .eq("company_id", activeCompanyId)
+          .maybeSingle(),
+        supabase.rpc("get_active_feature_keys", { p_company_id: activeCompanyId }),
+        supabase.from("company_feature_toggles").select("feature_key, enabled").eq("company_id", activeCompanyId),
+      ]);
     const subscriptionRow = subscription as unknown as (Subscription & { plan: Plan }) | null;
     activeSubscription = subscriptionRow ?? null;
     activePlan = subscriptionRow?.plan ?? null;
     // Si la RPC falla (ej. la migración 0013_plans.sql todavía no se corrió en
     // Supabase), no se debe ocultar la navegación entera — se asume acceso
     // completo en vez de fallar cerrado.
-    enabledFeatures = featuresError
+    const planFeatures = featuresError
       ? new Set(ALL_FEATURE_KEYS)
       : new Set(((featureRows as { feature_key: FeatureKey }[] | null) ?? []).map((r) => r.feature_key));
+
+    const toggles = new Map(
+      ((toggleRows as { feature_key: string; enabled: boolean }[] | null) ?? []).map((r) => [r.feature_key, r.enabled]),
+    );
+    enabledFeatures = activeMembership?.company.business_type
+      ? applyBusinessFeatureRules(planFeatures, activeMembership.company.business_type, toggles)
+      : planFeatures;
   }
 
   return {

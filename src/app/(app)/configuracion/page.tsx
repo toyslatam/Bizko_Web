@@ -29,7 +29,7 @@ export default async function ConfiguracionPage({
   const supabase = await createClient();
   const companyId = session.activeCompany.id;
 
-  const [{ data: members }, { data: plansData }, { data: usageData }] = await Promise.all([
+  const [{ data: members }, { data: plansData }, { data: usageData }, { data: toggleRows }] = await Promise.all([
     supabase
       .from("company_members")
       .select("*, profile:profiles(*)")
@@ -43,11 +43,15 @@ export default async function ConfiguracionPage({
       .eq("is_active", true)
       .order("price_monthly_cents", { ascending: true }),
     supabase.rpc("get_plan_usage", { p_company_id: companyId }),
+    supabase.from("company_feature_toggles").select("feature_key, enabled").eq("company_id", companyId),
   ]);
 
   const team = (members ?? []) as unknown as (CompanyMember & { profile: Profile | null })[];
   const plans = (plansData ?? []) as unknown as PlanWithFeatures[];
   const usage = (usageData as PlanUsageRow[] | null) ?? [];
+  const featureToggles = Object.fromEntries(
+    ((toggleRows as { feature_key: string; enabled: boolean }[] | null) ?? []).map((r) => [r.feature_key, r.enabled]),
+  );
   const isOwner = session.activeMembership?.role === "owner";
 
   return (
@@ -57,7 +61,11 @@ export default async function ConfiguracionPage({
         description="Ajusta la información y el equipo de tu negocio."
       />
 
-      <Tabs defaultValue={tab === "plan" ? "plan" : "perfil"}>
+      <Tabs
+        defaultValue={
+          tab === "plan" || tab === "negocio" || tab === "delivery" || tab === "equipo" ? tab : "perfil"
+        }
+      >
         <TabsList>
           <TabsTrigger value="perfil">Mi perfil</TabsTrigger>
           <TabsTrigger value="negocio">Mi negocio</TabsTrigger>
@@ -88,7 +96,7 @@ export default async function ConfiguracionPage({
         <TabsContent value="negocio" className="mt-6">
           <Card>
             <CardContent className="py-2">
-              <CompanySettingsForm company={session.activeCompany} canEdit={isOwner} />
+              <CompanySettingsForm company={session.activeCompany} canEdit={isOwner} featureToggles={featureToggles} />
             </CardContent>
           </Card>
         </TabsContent>

@@ -16,6 +16,7 @@ import { getSessionContext, displayName } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { stockStatus } from "@/lib/inventory";
 import { getPeriodRange, deltaPct } from "@/lib/date-range";
+import { getToggleableFeaturesForBusiness } from "@/lib/features";
 import type { SaleRow } from "@/components/ventas/sale-list";
 import type { CashRegister, PlanUsageRow } from "@/types/database";
 
@@ -467,6 +468,26 @@ export default async function DashboardPage() {
           Esto es lo que está pasando hoy en {session.activeCompany.name}.
         </p>
       </div>
+
+      {session.activeMembership?.role === "owner" &&
+        (() => {
+          const suggested = getToggleableFeaturesForBusiness(session.activeCompany.business_type).filter(
+            (f) => !session.enabledFeatures.has(f.feature),
+          );
+          if (suggested.length === 0) return null;
+          return (
+            <div className="flex flex-col items-start gap-3 rounded-xl border border-dashed border-brand/40 bg-brand/5 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm text-foreground">
+                💡 ¿{suggested.map((f) => f.hint.replace(/^Actívalo si /, "").replace(/\.$/, "")).join(" o ")}?
+                Puedes activar <span className="font-medium">{suggested.map((f) => f.name).join(" y ")}</span> desde
+                Configuración.
+              </p>
+              <Button asChild variant="outline" size="sm" className="shrink-0">
+                <Link href="/configuracion?tab=negocio">Ir a Configuración</Link>
+              </Button>
+            </div>
+          );
+        })()}
 
       {isEmptyAccount && (
         <div className="flex flex-col items-start gap-3 rounded-xl border border-dashed border-brand/40 bg-brand/5 p-5 sm:flex-row sm:items-center sm:justify-between">

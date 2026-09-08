@@ -277,3 +277,37 @@ export async function resendTeamInvitationAction(
   revalidatePath("/configuracion");
   return { ok: true };
 }
+
+/**
+ * Prende/apaga una feature opcional según el rubro (hoy: Productos/Servicios
+ * cuando el rubro los deja opcionales — ver src/lib/features.ts). Solo el
+ * dueño puede tocarlo, igual que el resto de Configuración → Mi negocio.
+ */
+export async function updateFeatureToggleAction(
+  companyId: string,
+  featureKey: string,
+  enabled: boolean,
+): Promise<{ ok: true } | { error: string }> {
+  const session = await getSessionContext();
+  if (
+    !session ||
+    session.activeCompany?.id !== companyId ||
+    session.activeMembership?.role !== "owner"
+  ) {
+    return { error: "Solo el dueño puede cambiar esto." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("company_feature_toggles")
+    .upsert(
+      { company_id: companyId, feature_key: featureKey, enabled, updated_at: new Date().toISOString() },
+      { onConflict: "company_id,feature_key" },
+    );
+
+  if (error) return { error: "No pudimos guardar el cambio." };
+
+  revalidatePath("/configuracion");
+  revalidatePath("/dashboard");
+  return { ok: true };
+}
