@@ -16,6 +16,7 @@ import {
 import { PageHeader } from "@/components/ui/page-header";
 import { getSessionContext } from "@/lib/auth/session";
 import { can } from "@/lib/permissions";
+import { businessHasAgenda } from "@/lib/catalog";
 
 interface ReportCard {
   href: string;
@@ -41,10 +42,10 @@ const FOOD_REPORT_CARD: ReportCard = {
   description: "Horas pico, tipo de pedido, combos y tiempo de preparación.",
 };
 
-const BARBERSHOP_REPORT_CARD: ReportCard = {
+const AGENDA_REPORT_CARD: ReportCard = {
   href: "/reportes/peluqueria",
   icon: Scissors,
-  title: "Peluquería",
+  title: "Agenda y comisiones",
   description: "Comisiones por profesional y embudo de citas.",
 };
 
@@ -59,8 +60,8 @@ export default async function ReportesPage() {
   const cards =
     session.activeCompany.business_type === "food"
       ? [...REPORT_CARDS, FOOD_REPORT_CARD]
-      : session.activeCompany.business_type === "barbershop"
-        ? [...REPORT_CARDS, BARBERSHOP_REPORT_CARD]
+      : businessHasAgenda(session.activeCompany.business_type)
+        ? [...REPORT_CARDS, AGENDA_REPORT_CARD]
         : REPORT_CARDS;
 
   return (

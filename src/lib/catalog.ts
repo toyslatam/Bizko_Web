@@ -1,11 +1,25 @@
 import type {
   AppointmentStatus,
+  BusinessType,
   Customer,
   EntityStatus,
   LaundryOrderStatus,
   ProductUnit,
   WorkOrderStatus,
 } from "@/types/database";
+
+/**
+ * Verticales que usan Agenda + Profesionales + turnos (reserva con horario,
+ * evita doble reserva) — el mismo sistema construido para peluquería, solo
+ * reusado: "profesional" es barbero/estilista, mecánico o bahía de lavado
+ * según el negocio. Restaurante/comida (Mesas+Cocina) y los que venden por
+ * pedido directo (panadería, frutas, lavandería, boutique) no entran aquí.
+ */
+export const AGENDA_BUSINESS_TYPES: BusinessType[] = ["barbershop", "pet_shop", "workshop", "moto_wash"];
+
+export function businessHasAgenda(type: BusinessType): boolean {
+  return AGENDA_BUSINESS_TYPES.includes(type);
+}
 
 export const UNIT_LABELS: Record<ProductUnit, string> = {
   unidad: "Unidad",

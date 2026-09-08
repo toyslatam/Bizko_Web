@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { BookingFlow } from "@/components/store/booking-flow";
+import { businessHasAgenda } from "@/lib/catalog";
 import type { PublicCompany, PublicProfessional, PublicService } from "@/types/database";
 
 interface BookingPageProps {
@@ -34,7 +35,7 @@ export default async function BookingPage({ params }: BookingPageProps) {
 
   const { data: companyData } = await supabase.rpc("get_public_company", { p_slug: slug }).maybeSingle();
   const company = companyData as PublicCompany | null;
-  if (!company || company.business_type !== "barbershop") notFound();
+  if (!company || !businessHasAgenda(company.business_type)) notFound();
 
   const { data: servicesData } = await supabase.rpc("list_public_services", { p_company_id: company.id });
   const service = ((servicesData as PublicService[]) ?? []).find((s) => s.id === serviceId);

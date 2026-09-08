@@ -7,6 +7,7 @@ import { CategoryFilter } from "@/components/store/category-filter";
 import { SortDropdown } from "@/components/store/sort-dropdown";
 import { ProductCard } from "@/components/store/product-card";
 import { ServiceCard } from "@/components/store/service-card";
+import { businessHasAgenda } from "@/lib/catalog";
 import type { PublicCategory, PublicCompany, PublicProduct, PublicService } from "@/types/database";
 
 interface PageProps {
@@ -44,7 +45,7 @@ export default async function PublicStorePage({ params, searchParams }: PageProp
   const company = companyData as PublicCompany | null;
   if (!company) notFound();
 
-  const isBarbershop = company.business_type === "barbershop";
+  const isBarbershop = businessHasAgenda(company.business_type);
 
   const [{ data: categoriesData }, { data: productsData }, { data: priceRangesData }, { data: servicesData }] =
     await Promise.all([

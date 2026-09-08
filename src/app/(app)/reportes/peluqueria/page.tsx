@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase/server";
 import { resolveReportPeriod } from "@/lib/reportes";
 import { formatCurrencyCents } from "@/lib/format";
 import { PeriodFilter } from "@/components/reportes/period-filter";
+import { businessHasAgenda } from "@/lib/catalog";
 
 interface ProfessionalReportRow {
   professional_id: string;
@@ -37,7 +38,7 @@ export default async function PeluqueriaReportPage({
   if (!session.activeMembership || !can(session.activeMembership.role, "reportes.ver")) {
     redirect("/dashboard");
   }
-  if (session.activeCompany.business_type !== "barbershop") redirect("/reportes");
+  if (!businessHasAgenda(session.activeCompany.business_type)) redirect("/reportes");
 
   const supabase = await createClient();
   const companyId = session.activeCompany.id;
@@ -82,7 +83,7 @@ export default async function PeluqueriaReportPage({
   return (
     <div>
       <PageHeader
-        title="Peluquería"
+        title="Agenda y comisiones"
         description="Comisiones por profesional y embudo de citas."
       />
 
