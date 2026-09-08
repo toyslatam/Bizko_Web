@@ -145,6 +145,12 @@ grant execute on function get_available_slots to anon, authenticated;
 -- para no perder el detalle en reportes por servicio, ajustando con un
 -- descuento la diferencia entre la suma de partes y el precio del paquete.
 -- ---------------------------------------------------------------------------
+-- CREATE OR REPLACE no alcanza aquí: agregar p_service_notes cambia la
+-- aridad de la función, así que Postgres crearía una segunda función
+-- sobrecargada en vez de reemplazar la original de 3 parámetros, dejando
+-- el nombre ambiguo. Hay que tumbar esa firma vieja primero.
+drop function if exists complete_and_pay_appointment(uuid, payment_method, jsonb);
+
 create or replace function complete_and_pay_appointment(
   p_appointment_id uuid,
   p_payment_method payment_method default 'cash',
