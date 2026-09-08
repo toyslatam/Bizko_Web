@@ -7,9 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createClient } from "@/lib/supabase/client";
-import type { EmailOtpType } from "@supabase/supabase-js";
+import { confirmCodeAction } from "./actions";
+import type { VerificationPurpose } from "@/lib/auth/verification-codes";
 
-const VALID_TYPES: EmailOtpType[] = ["invite", "recovery", "signup", "email_change", "magiclink"];
+const VALID_TYPES: VerificationPurpose[] = ["invite", "recovery"];
 
 export default function VerifyCodePage() {
   return (
@@ -22,8 +23,8 @@ export default function VerifyCodePage() {
 function VerifyCodeForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const typeParam = searchParams.get("type") as EmailOtpType | null;
-  const type: EmailOtpType = typeParam && VALID_TYPES.includes(typeParam) ? typeParam : "recovery";
+  const typeParam = searchParams.get("type") as VerificationPurpose | null;
+  const type: VerificationPurpose = typeParam && VALID_TYPES.includes(typeParam) ? typeParam : "recovery";
 
   const [email, setEmail] = React.useState(searchParams.get("email") ?? "");
   const [code, setCode] = React.useState("");
@@ -34,26 +35,22 @@ function VerifyCodeForm() {
     e.preventDefault();
     setLoading(true);
     try {
-      const supabase = createClient();
-      const { error: verifyError } = await supabase.auth.verifyOtp({
-        email: email.trim(),
-        token: code.trim(),
-        type,
-      });
-      if (verifyError) throw verifyError;
+      const result = await confirmCodeAction(email, code, password, type);
+      if ("error" in result) {
+        toast.error("No pudimos verificar el código", { description: result.error });
+        return;
+      }
 
-      const { error: updateError } = await supabase.auth.updateUser({ password });
-      if (updateError) throw updateError;
+      const supabase = createClient();
+      const { error: signInError } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+      if (signInError) throw signInError;
 
       toast.success("Contraseña creada correctamente.");
       router.push("/dashboard");
       router.refresh();
     } catch (err) {
-      toast.error("No pudimos verificar el código", {
-        description:
-          err instanceof Error
-            ? err.message
-            : "Revisa que el código sea correcto — se venció o ya se usó, pide uno nuevo.",
+      toast.error("Tu contraseña quedó guardada, pero no pudimos iniciar sesión", {
+        description: err instanceof Error ? err.message : "Intenta iniciar sesión normal desde /login.",
       });
     } finally {
       setLoading(false);

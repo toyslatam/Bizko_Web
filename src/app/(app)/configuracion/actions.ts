@@ -1,12 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getSessionContext } from "@/lib/auth/session";
 import { can } from "@/lib/permissions";
 import { checkPlanLimit } from "@/lib/subscription";
+import { issueVerificationCode } from "@/lib/auth/verification-codes";
 import type { CompanyRole } from "@/types/database";
 
 interface UpdateCompanyInput {
@@ -162,9 +162,11 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
  * Invita a alguien a la empresa. Si el correo ya tiene cuenta en bizko
  * (de esta u otra empresa), se agrega directo como miembro activo — no hace
  * falta reenviar nada, ya tiene con qué iniciar sesión. Si es correo nuevo,
- * se crea el usuario de Auth y Supabase envía el correo de invitación (link
- * mágico); queda "invited" hasta que entre por primera vez — ver
- * getSessionContext(), que activa la membresía en cuanto detecta la sesión.
+ * se crea el usuario de Auth (sin contraseña todavía) y bizko le manda su
+ * propio código de 6 dígitos por Resend — nunca se usa el sistema de
+ * invitación/OTP nativo de Supabase Auth (ver src/lib/auth/verification-codes.ts).
+ * Queda "invited" hasta que confirme el código — ver getSessionContext(),
+ * que activa la membresía en cuanto detecta la sesión.
  */
 export async function sendTeamInvitationAction(
   companyId: string,
@@ -203,13 +205,17 @@ export async function sendTeamInvitationAction(
   const alreadyHadAccount = Boolean(userId);
 
   if (!userId) {
-    const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(trimmedEmail, {
-      redirectTo: await inviteRedirectUrl(trimmedEmail),
+    const { data: created, error: createError } = await admin.auth.admin.createUser({
+      email: trimmedEmail,
+      email_confirm: true,
     });
-    if (inviteError || !invited?.user) {
-      return { error: inviteError?.message || "No pudimos enviar la invitación. Intenta de nuevo." };
+    if (createError || !created?.user) {
+      return { error: createError?.message || "No pudimos crear la cuenta. Intenta de nuevo." };
     }
-    userId = invited.user.id;
+    userId = created.user.id;
+
+    const codeResult = await issueVerificationCode(userId, trimmedEmail, "invite");
+    if ("error" in codeResult) return codeResult;
   }
 
   const { error: memberError } = await supabase.from("company_members").insert({
@@ -229,26 +235,9 @@ export async function sendTeamInvitationAction(
 }
 
 /**
- * URL a la que Supabase redirige tras el link del correo — usa el host real
- * del request, nunca uno fijo. Apunta a /verificar-codigo (código de 6
- * dígitos, no un link mágico de un solo uso): Gmail y otros correos a veces
- * "visitan" los links de un correo por escaneo de seguridad antes de que la
- * persona le dé clic, y eso deja gastado un link mágico de un solo uso —
- * un código que se escribe a mano no se puede gastar así.
- */
-async function inviteRedirectUrl(email: string): Promise<string> {
-  const headerList = await headers();
-  const host = headerList.get("host") ?? "";
-  const protocol = headerList.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
-  return `${protocol}://${host}/verificar-codigo?email=${encodeURIComponent(email)}&type=invite`;
-}
-
-/**
- * Reenvía una invitación pendiente. El usuario de Auth que quedó del primer
- * envío no se puede "reinvitar" directo (Supabase rechaza invitar un correo
- * que ya tiene un usuario, aunque no haya confirmado nada) — se borra ese
- * usuario sin confirmar y se crea uno nuevo con el link correcto, luego se
- * re-vincula la misma fila de company_members al nuevo user_id.
+ * Reenvía una invitación pendiente — como el código lo genera y controla
+ * bizko (no Supabase), no hace falta borrar/recrear ningún usuario: solo se
+ * emite un código nuevo para el mismo user_id.
  */
 export async function resendTeamInvitationAction(
   companyId: string,
@@ -282,25 +271,8 @@ export async function resendTeamInvitationAction(
   const email = userRow?.user?.email;
   if (!email) return { error: "No encontramos el correo de esa invitación." };
 
-  // Cascada: borrar el usuario sin confirmar también borra esta fila de
-  // company_members (on delete cascade) — se re-crea después con el mismo
-  // rol, apuntando al usuario nuevo.
-  await admin.auth.admin.deleteUser(member.user_id);
-
-  const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(email, {
-    redirectTo: await inviteRedirectUrl(email),
-  });
-  if (inviteError || !invited?.user) {
-    return { error: inviteError?.message || "No pudimos reenviar la invitación." };
-  }
-
-  const { error: memberError } = await supabase.from("company_members").insert({
-    company_id: companyId,
-    user_id: invited.user.id,
-    role: member.role,
-    status: "invited",
-  });
-  if (memberError) return { error: "El correo se reenvió, pero no pudimos actualizar el equipo. Refresca la página." };
+  const codeResult = await issueVerificationCode(member.user_id, email, "invite");
+  if ("error" in codeResult) return codeResult;
 
   revalidatePath("/configuracion");
   return { ok: true };

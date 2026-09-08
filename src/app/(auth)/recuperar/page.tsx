@@ -7,7 +7,7 @@ import { CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { createClient } from "@/lib/supabase/client";
+import { requestPasswordResetCodeAction } from "./actions";
 
 export default function RecoverPasswordPage() {
   const [email, setEmail] = React.useState("");
@@ -18,11 +18,7 @@ export default function RecoverPasswordPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      const supabase = createClient();
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/verificar-codigo?email=${encodeURIComponent(email)}&type=recovery`,
-      });
-      if (error) throw error;
+      await requestPasswordResetCodeAction(email);
       setSent(true);
     } catch (err) {
       toast.error("No pudimos enviar el correo", {
@@ -46,8 +42,11 @@ export default function RecoverPasswordPage() {
           Te enviamos un código a <span className="font-medium">{email}</span> para
           que puedas crear una nueva contraseña.
         </p>
-        <Link href="/login" className="mt-6 text-sm font-medium text-brand hover:underline">
-          Volver a iniciar sesión
+        <Link
+          href={`/verificar-codigo?email=${encodeURIComponent(email)}&type=recovery`}
+          className="mt-6 text-sm font-medium text-brand hover:underline"
+        >
+          Ya tengo mi código
         </Link>
       </div>
     );
