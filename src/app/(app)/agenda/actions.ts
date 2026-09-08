@@ -110,6 +110,8 @@ export interface CompleteAppointmentInput {
   appointmentId: string;
   paymentMethod: PaymentMethod;
   extraItems: { productId: string; quantity: number }[];
+  /** Lo que hizo el profesional (tono usado, diseño, tratamiento) — historial de belleza del cliente. */
+  serviceNotes?: string;
 }
 
 type CompleteResult = { ok: true; saleId: string; totalCents: number } | { error: string };
@@ -129,6 +131,7 @@ export async function completeAndPayAppointmentAction(
         product_id: item.productId,
         quantity: item.quantity,
       })),
+      p_service_notes: input.serviceNotes?.trim() || null,
     })
     .single();
 

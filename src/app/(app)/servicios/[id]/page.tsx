@@ -10,7 +10,7 @@ import { ServiceFormSheet } from "@/components/servicios/service-form-sheet";
 import { ServiceProfessionalsSection } from "@/components/servicios/service-professionals-section";
 import { setServiceStatusAction } from "@/app/(app)/servicios/actions";
 import { formatCurrencyCents } from "@/lib/format";
-import type { Professional, Service, ServiceCategory } from "@/types/database";
+import type { Professional, Service, ServiceCategory, ServicePackageItem } from "@/types/database";
 
 export default async function ServiceDetailPage({
   params,
@@ -23,23 +23,36 @@ export default async function ServiceDetailPage({
 
   const { id } = await params;
   const supabase = await createClient();
-  const [{ data: serviceData }, { data: categoriesData }, { data: professionalsData }, { data: assignedData }] =
-    await Promise.all([
-      supabase.from("services").select("*").eq("id", id).maybeSingle(),
-      supabase
-        .from("service_categories")
-        .select("*")
-        .eq("company_id", session.activeCompany.id)
-        .eq("status", "active")
-        .order("name"),
-      supabase
-        .from("professionals")
-        .select("*")
-        .eq("company_id", session.activeCompany.id)
-        .eq("status", "active")
-        .order("name"),
-      supabase.from("service_professionals").select("professional_id").eq("service_id", id),
-    ]);
+  const [
+    { data: serviceData },
+    { data: categoriesData },
+    { data: professionalsData },
+    { data: assignedData },
+    { data: otherServicesData },
+    { data: packageItemsData },
+  ] = await Promise.all([
+    supabase.from("services").select("*").eq("id", id).maybeSingle(),
+    supabase
+      .from("service_categories")
+      .select("*")
+      .eq("company_id", session.activeCompany.id)
+      .eq("status", "active")
+      .order("name"),
+    supabase
+      .from("professionals")
+      .select("*")
+      .eq("company_id", session.activeCompany.id)
+      .eq("status", "active")
+      .order("name"),
+    supabase.from("service_professionals").select("professional_id").eq("service_id", id),
+    supabase
+      .from("services")
+      .select("*")
+      .eq("company_id", session.activeCompany.id)
+      .neq("id", id)
+      .order("name"),
+    supabase.from("service_package_items").select("*").eq("package_service_id", id),
+  ]);
 
   const service = serviceData as Service | null;
   if (!service) notFound();
@@ -47,6 +60,8 @@ export default async function ServiceDetailPage({
   const category = categories.find((c) => c.id === service.category_id);
   const professionals = (professionalsData ?? []) as Professional[];
   const assignedProfessionalIds = (assignedData ?? []).map((row) => row.professional_id as string);
+  const otherServices = (otherServicesData ?? []) as Service[];
+  const packageItems = (packageItemsData ?? []) as ServicePackageItem[];
 
   return (
     <div className="max-w-2xl">
@@ -75,7 +90,13 @@ export default async function ServiceDetailPage({
           </div>
         </div>
         <div className="flex shrink-0 gap-2">
-          <ServiceFormSheet companyId={session.activeCompany.id} categories={categories} service={service} />
+          <ServiceFormSheet
+            companyId={session.activeCompany.id}
+            categories={categories}
+            service={service}
+            otherServices={otherServices}
+            packageItems={packageItems}
+          />
           <ToggleStatusButton
             status={service.status}
             entityLabel="Servicio"

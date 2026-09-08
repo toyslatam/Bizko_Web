@@ -35,10 +35,12 @@ export function BookingFlow({
   slug,
   service,
   initialProfessionals,
+  packageIncludes,
 }: {
   slug: string;
   service: PublicService;
   initialProfessionals: PublicProfessional[];
+  packageIncludes?: string;
 }) {
   const router = useRouter();
   const supabase = React.useMemo(() => createClient(), []);
@@ -155,6 +157,9 @@ export function BookingFlow({
           <p className="flex items-center gap-1 text-xs text-muted-foreground">
             <Clock className="size-3" /> {service.duration_minutes} min
           </p>
+        )}
+        {packageIncludes && (
+          <p className="text-xs text-muted-foreground">Incluye: {packageIncludes}</p>
         )}
       </section>
 

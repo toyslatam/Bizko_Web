@@ -8,6 +8,7 @@ import {
   Wrench as WrenchIcon,
   UtensilsCrossed,
   Scissors,
+  Images,
   type LucideIcon,
 } from "lucide-react";
 
@@ -81,6 +82,7 @@ export const BUSINESS_MODULES: BusinessModuleConfig[] = [
     navItems: [
       { label: "Agenda", href: "/agenda", icon: CalendarClock },
       { label: "Profesionales", href: "/profesionales", icon: Scissors },
+      { label: "Galería de trabajos", href: "/galeria", icon: Images },
     ],
   },
   {

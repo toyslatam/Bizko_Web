@@ -6,6 +6,13 @@ import { getSessionContext, type SessionContext } from "@/lib/auth/session";
 import { can } from "@/lib/permissions";
 import type { CommissionType, EntityStatus } from "@/types/database";
 
+export interface TimeOffInput {
+  professionalId: string;
+  startsAt: string;
+  endsAt: string;
+  reason: string;
+}
+
 export interface ProfessionalInput {
   name: string;
   photoUrl: string | null;
@@ -221,6 +228,49 @@ export async function deleteCommissionRuleAction(
   const { error } = await supabase.from("commission_rules").delete().eq("id", id);
 
   if (error) return { error: "No pudimos eliminar la comisión." };
+
+  revalidatePath(`/profesionales/${professionalId}`);
+  return { ok: true };
+}
+
+export async function createTimeOffAction(
+  input: TimeOffInput,
+): Promise<{ ok: true } | { error: string }> {
+  const guard = await requireCatalogPermission();
+  if ("error" in guard) return guard;
+
+  if (!input.startsAt || !input.endsAt) {
+    return { error: "Selecciona la fecha y hora de inicio y fin." };
+  }
+  if (new Date(input.endsAt).getTime() <= new Date(input.startsAt).getTime()) {
+    return { error: "La hora de fin debe ser posterior a la de inicio." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("professional_time_off").insert({
+    professional_id: input.professionalId,
+    starts_at: input.startsAt,
+    ends_at: input.endsAt,
+    reason: input.reason.trim() || null,
+  });
+
+  if (error) return { error: "No pudimos guardar el bloqueo." };
+
+  revalidatePath(`/profesionales/${input.professionalId}`);
+  return { ok: true };
+}
+
+export async function deleteTimeOffAction(
+  id: string,
+  professionalId: string,
+): Promise<{ ok: true } | { error: string }> {
+  const guard = await requireCatalogPermission();
+  if ("error" in guard) return guard;
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("professional_time_off").delete().eq("id", id);
+
+  if (error) return { error: "No pudimos eliminar el bloqueo." };
 
   revalidatePath(`/profesionales/${professionalId}`);
   return { ok: true };

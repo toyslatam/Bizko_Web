@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -28,10 +30,11 @@ import {
 import {
   createServiceAction,
   updateServiceAction,
+  updateServicePackageAction,
   type ServiceInput,
 } from "@/app/(app)/servicios/actions";
 import { uploadCompanyFile } from "@/lib/storage";
-import type { Service, ServiceCategory } from "@/types/database";
+import type { Service, ServiceCategory, ServicePackageItem } from "@/types/database";
 
 const EMPTY: ServiceInput = {
   name: "",
@@ -46,10 +49,14 @@ export function ServiceFormSheet({
   companyId,
   categories,
   service,
+  otherServices = [],
+  packageItems = [],
 }: {
   companyId: string;
   categories: ServiceCategory[];
   service?: Service;
+  otherServices?: Service[];
+  packageItems?: ServicePackageItem[];
 }) {
   const router = useRouter();
   const isEdit = Boolean(service);
@@ -69,6 +76,23 @@ export function ServiceFormSheet({
   const [errors, setErrors] = React.useState<Partial<Record<"name" | "price", string>>>({});
   const [saving, setSaving] = React.useState(false);
   const [uploading, setUploading] = React.useState(false);
+  const [isPackage, setIsPackage] = React.useState(service?.is_package ?? false);
+  const [componentIds, setComponentIds] = React.useState(
+    new Set(packageItems.map((item) => item.component_service_id)),
+  );
+
+  const availableComponents = otherServices.filter(
+    (s) => s.status === "active" && !s.is_package,
+  );
+
+  function toggleComponent(id: string, checked: boolean) {
+    setComponentIds((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  }
 
   function patch<K extends keyof ServiceInput>(key: K, value: ServiceInput[K]) {
     setValues((v) => ({ ...v, [key]: value }));
@@ -96,12 +120,27 @@ export function ServiceFormSheet({
     const result = isEdit
       ? await updateServiceAction(service!.id, values)
       : await createServiceAction(values);
-    setSaving(false);
 
     if ("error" in result) {
+      setSaving(false);
       setErrors(result.fieldErrors ?? {});
       toast.error(result.error);
       return;
+    }
+
+    if (isEdit) {
+      const packageResult = await updateServicePackageAction(
+        service!.id,
+        isPackage,
+        Array.from(componentIds),
+      );
+      setSaving(false);
+      if ("error" in packageResult) {
+        toast.error(packageResult.error);
+        return;
+      }
+    } else {
+      setSaving(false);
     }
 
     toast.success(isEdit ? "Servicio actualizado." : "Servicio creado correctamente.");
@@ -239,6 +278,57 @@ export function ServiceFormSheet({
                 onChange={(e) => patch("description", e.target.value)}
               />
             </div>
+          </div>
+
+          <div className="space-y-3">
+            <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+              Paquete de servicios
+            </p>
+            {isEdit ? (
+              <>
+                <div className="flex items-center justify-between rounded-lg border border-border px-3 py-2.5">
+                  <div className="pr-3">
+                    <p className="text-sm font-medium text-foreground">Es un paquete de varios servicios</p>
+                    <p className="text-xs text-muted-foreground">
+                      Se cobra a un precio combinado y agrupa otros servicios existentes.
+                    </p>
+                  </div>
+                  <Switch checked={isPackage} onCheckedChange={setIsPackage} />
+                </div>
+                {isPackage && (
+                  <div className="space-y-2.5">
+                    {availableComponents.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">
+                        No tienes otros servicios activos para incluir en el paquete.
+                      </p>
+                    ) : (
+                      availableComponents.map((s) => {
+                        const checked = componentIds.has(s.id);
+                        return (
+                          <div key={s.id} className="flex items-center gap-2.5">
+                            <Checkbox
+                              id={`package-component-${s.id}`}
+                              checked={checked}
+                              onCheckedChange={(value) => toggleComponent(s.id, value === true)}
+                            />
+                            <Label
+                              htmlFor={`package-component-${s.id}`}
+                              className="cursor-pointer font-normal"
+                            >
+                              {s.name}
+                            </Label>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                )}
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Guarda el servicio primero para armar el paquete.
+              </p>
+            )}
           </div>
         </form>
 

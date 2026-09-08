@@ -9,9 +9,10 @@ import { ToggleStatusButton } from "@/components/catalog/toggle-status-button";
 import { ProfessionalFormSheet } from "@/components/profesionales/professional-form-sheet";
 import { ProfessionalServicesSection } from "@/components/profesionales/professional-services-section";
 import { CommissionRulesTable } from "@/components/profesionales/commission-rules-table";
+import { TimeOffList } from "@/components/profesionales/time-off-list";
 import { setProfessionalStatusAction } from "@/app/(app)/profesionales/actions";
 import { summarizeWorkDays, formatTimeShort } from "@/lib/professionals";
-import type { CommissionRule, Professional, Service } from "@/types/database";
+import type { CommissionRule, Professional, ProfessionalTimeOff, Service } from "@/types/database";
 
 export default async function ProfessionalDetailPage({
   params,
@@ -26,18 +27,28 @@ export default async function ProfessionalDetailPage({
   const supabase = await createClient();
   const companyId = session.activeCompany.id;
 
-  const [{ data: professionalData }, { data: servicesData }, { data: assignedData }, { data: rulesData }] =
-    await Promise.all([
-      supabase.from("professionals").select("*").eq("id", id).maybeSingle(),
-      supabase
-        .from("services")
-        .select("*")
-        .eq("company_id", companyId)
-        .eq("status", "active")
-        .order("name"),
-      supabase.from("service_professionals").select("service_id").eq("professional_id", id),
-      supabase.from("commission_rules").select("*").eq("professional_id", id),
-    ]);
+  const [
+    { data: professionalData },
+    { data: servicesData },
+    { data: assignedData },
+    { data: rulesData },
+    { data: timeOffData },
+  ] = await Promise.all([
+    supabase.from("professionals").select("*").eq("id", id).maybeSingle(),
+    supabase
+      .from("services")
+      .select("*")
+      .eq("company_id", companyId)
+      .eq("status", "active")
+      .order("name"),
+    supabase.from("service_professionals").select("service_id").eq("professional_id", id),
+    supabase.from("commission_rules").select("*").eq("professional_id", id),
+    supabase
+      .from("professional_time_off")
+      .select("*")
+      .eq("professional_id", id)
+      .order("starts_at", { ascending: true }),
+  ]);
 
   const professional = professionalData as Professional | null;
   if (!professional) notFound();
@@ -46,6 +57,7 @@ export default async function ProfessionalDetailPage({
   const assignedServiceIds = (assignedData ?? []).map((row) => row.service_id as string);
   const assignedServices = services.filter((s) => assignedServiceIds.includes(s.id));
   const rules = (rulesData ?? []) as CommissionRule[];
+  const timeOffs = (timeOffData ?? []) as ProfessionalTimeOff[];
 
   return (
     <div className="max-w-3xl">
@@ -120,6 +132,13 @@ export default async function ProfessionalDetailPage({
           assignedServices={assignedServices}
           rules={rules}
         />
+      </div>
+
+      <div className="mt-6">
+        <h2 className="mb-3 font-heading text-base font-semibold text-foreground">
+          Descansos, bloqueos y vacaciones
+        </h2>
+        <TimeOffList professionalId={professional.id} timeOffs={timeOffs} />
       </div>
     </div>
   );

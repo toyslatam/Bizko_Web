@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Mail, MapPin, Phone, Receipt, ShoppingCart, ClipboardList, History } from "lucide-react";
+import { ArrowLeft, Mail, MapPin, Phone, Receipt, ShoppingCart, ClipboardList, History, Sparkles } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getSessionContext } from "@/lib/auth/session";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -15,7 +15,7 @@ import { CrmTaskList } from "@/components/crm/crm-task-list";
 import { CrmNoteList } from "@/components/crm/crm-note-list";
 import { CrmTagPicker } from "@/components/crm/crm-tag-picker";
 import { setCustomerStatusAction } from "@/app/(app)/clientes/actions";
-import { customerFullName, customerInitials } from "@/lib/catalog";
+import { businessHasAgenda, customerFullName, customerInitials } from "@/lib/catalog";
 import { formatCurrencyCents } from "@/lib/format";
 import { LEAD_SOURCE_LABELS } from "@/lib/crm";
 import type {
@@ -25,6 +25,13 @@ import type {
   CrmTag,
   CrmTask,
 } from "@/types/database";
+
+interface BeautyHistoryRow {
+  name: string;
+  notes: string | null;
+  total_cents: number;
+  sales: { created_at: string } | { created_at: string }[];
+}
 
 export default async function CustomerDetailPage({
   params,
@@ -62,6 +69,28 @@ export default async function CustomerDetailPage({
     .map((row) => row.crm_tags)
     .filter(Boolean);
   const companyTags = (companyTagsData as CrmTag[]) ?? [];
+
+  const hasAgenda = businessHasAgenda(session.activeCompany.business_type);
+  let beautyHistory: { name: string; notes: string | null; totalCents: number; createdAt: string }[] = [];
+  if (hasAgenda) {
+    const { data: beautyHistoryData } = await supabase
+      .from("sale_items")
+      .select("name, notes, total_cents, sales!inner(created_at, customer_id)")
+      .eq("sales.customer_id", id)
+      .eq("item_type", "service");
+
+    beautyHistory = ((beautyHistoryData ?? []) as unknown as BeautyHistoryRow[])
+      .map((row) => {
+        const sale = Array.isArray(row.sales) ? row.sales[0] : row.sales;
+        return {
+          name: row.name,
+          notes: row.notes,
+          totalCents: row.total_cents,
+          createdAt: sale?.created_at ?? "",
+        };
+      })
+      .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+  }
 
   return (
     <div className="max-w-3xl">
@@ -144,6 +173,7 @@ export default async function CustomerDetailPage({
           <TabsTrigger value="pedidos">Pedidos</TabsTrigger>
           <TabsTrigger value="pagos">Pagos</TabsTrigger>
           <TabsTrigger value="historial">Historial</TabsTrigger>
+          {hasAgenda && <TabsTrigger value="belleza">Historial de belleza</TabsTrigger>}
         </TabsList>
         <TabsContent value="crm" className="space-y-6 pt-4">
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -196,6 +226,44 @@ export default async function CustomerDetailPage({
             description="El historial completo de este cliente aparecerá aquí."
           />
         </TabsContent>
+        {hasAgenda && (
+          <TabsContent value="belleza" className="pt-4">
+            {beautyHistory.length === 0 ? (
+              <EmptyState
+                icon={Sparkles}
+                title="Sin historial de belleza todavía"
+                description="Los servicios completados de este cliente aparecerán aquí."
+              />
+            ) : (
+              <div className="space-y-3">
+                {beautyHistory.map((visit, i) => (
+                  <div key={i} className="rounded-xl border border-border bg-card p-4">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium text-foreground">{visit.name}</p>
+                      <p className="text-sm font-medium text-foreground">
+                        {formatCurrencyCents(visit.totalCents)}
+                      </p>
+                    </div>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {visit.createdAt
+                        ? new Date(visit.createdAt).toLocaleDateString("es-CO", {
+                            day: "2-digit",
+                            month: "long",
+                            year: "numeric",
+                          })
+                        : "—"}
+                    </p>
+                    {visit.notes && (
+                      <p className="mt-2 rounded-lg bg-muted/40 p-2.5 text-sm text-foreground">
+                        {visit.notes}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );

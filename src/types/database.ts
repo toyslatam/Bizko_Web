@@ -520,8 +520,18 @@ export interface Service {
   duration_minutes: number | null;
   status: EntityStatus;
   is_published: boolean;
+  /** Paquete de varios servicios a un precio combinado — ver service_package_items. */
+  is_package: boolean;
   created_at: string;
   updated_at: string;
+}
+
+export interface ServicePackageItem {
+  id: string;
+  package_service_id: string;
+  component_service_id: string;
+  quantity: number;
+  sort_order: number;
 }
 
 export type SaleStatus = "completed" | "voided";
@@ -922,6 +932,29 @@ export interface Professional {
 export interface ServiceProfessional {
   service_id: string;
   professional_id: string;
+}
+
+/** Bloqueo/descanso/vacación de un profesional — no disponible en ese rango. */
+export interface ProfessionalTimeOff {
+  id: string;
+  professional_id: string;
+  starts_at: string;
+  ends_at: string;
+  reason: string | null;
+  created_at: string;
+}
+
+/** Foto de un trabajo realizado — Galería de trabajos. */
+export interface WorkGalleryItem {
+  id: string;
+  company_id: string;
+  image_url: string;
+  service_id: string | null;
+  professional_id: string | null;
+  customer_id: string | null;
+  description: string | null;
+  is_public: boolean;
+  created_at: string;
 }
 
 export type CommissionType = "percentage" | "fixed";

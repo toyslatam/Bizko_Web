@@ -47,6 +47,17 @@ export default async function BookingPage({ params }: BookingPageProps) {
   });
   const professionals = (professionalsData as PublicProfessional[]) ?? [];
 
+  const { data: packageItemsData } = await supabase.rpc("list_public_package_items", {
+    p_service_id: service.id,
+  });
+  const packageItems = (packageItemsData as { component_name: string; quantity: number }[]) ?? [];
+  const packageIncludes =
+    packageItems.length > 0
+      ? packageItems
+          .map((item) => (item.quantity !== 1 ? `${item.component_name} x${item.quantity}` : item.component_name))
+          .join(", ")
+      : undefined;
+
   return (
     <div className="mx-auto max-w-3xl">
       <Link
@@ -56,7 +67,12 @@ export default async function BookingPage({ params }: BookingPageProps) {
         <ArrowLeft className="size-4" /> Volver al catálogo
       </Link>
 
-      <BookingFlow slug={slug} service={service} initialProfessionals={professionals} />
+      <BookingFlow
+        slug={slug}
+        service={service}
+        initialProfessionals={professionals}
+        packageIncludes={packageIncludes}
+      />
     </div>
   );
 }

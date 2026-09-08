@@ -4,7 +4,15 @@ import { Clock, Scissors } from "lucide-react";
 import { formatCurrencyCents } from "@/lib/format";
 import type { PublicService } from "@/types/database";
 
-export function ServiceCard({ slug, service }: { slug: string; service: PublicService }) {
+export function ServiceCard({
+  slug,
+  service,
+  includes,
+}: {
+  slug: string;
+  service: PublicService;
+  includes?: string;
+}) {
   return (
     <Link
       href={`/store/${slug}/reservar/${service.id}`}
@@ -29,6 +37,9 @@ export function ServiceCard({ slug, service }: { slug: string; service: PublicSe
         <p className="line-clamp-2 text-sm font-medium text-foreground">{service.name}</p>
         {service.description && (
           <p className="line-clamp-2 text-xs text-muted-foreground">{service.description}</p>
+        )}
+        {includes && (
+          <p className="line-clamp-2 text-xs text-muted-foreground">Incluye: {includes}</p>
         )}
         <div className="mt-auto flex items-center justify-between pt-1">
           <span className="text-sm font-semibold text-foreground">{formatCurrencyCents(service.price_cents)}</span>

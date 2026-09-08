@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getSessionContext } from "@/lib/auth/session";
-import type { EntityStatus } from "@/types/database";
+import type { EntityStatus, Service } from "@/types/database";
 
 export interface ServiceInput {
   name: string;
@@ -97,6 +97,60 @@ export async function updateServiceAction(
   revalidatePath("/servicios");
   revalidatePath(`/servicios/${id}`);
   return { ok: true, id };
+}
+
+export async function updateServicePackageAction(
+  serviceId: string,
+  isPackage: boolean,
+  componentServiceIds: string[],
+): Promise<{ ok: true } | { error: string }> {
+  const supabase = await createClient();
+
+  const uniqueIds = Array.from(new Set(componentServiceIds)).filter((id) => id !== serviceId);
+
+  if (uniqueIds.length > 0) {
+    const { data: componentsData } = await supabase
+      .from("services")
+      .select("id, is_package")
+      .in("id", uniqueIds);
+    const validIds = new Set(
+      ((componentsData ?? []) as Pick<Service, "id" | "is_package">[])
+        .filter((s) => !s.is_package)
+        .map((s) => s.id),
+    );
+    componentServiceIds = uniqueIds.filter((id) => validIds.has(id));
+  } else {
+    componentServiceIds = [];
+  }
+
+  const { error: updateError } = await supabase
+    .from("services")
+    .update({ is_package: isPackage, updated_at: new Date().toISOString() })
+    .eq("id", serviceId);
+
+  if (updateError) return { error: "No pudimos guardar el paquete." };
+
+  const { error: deleteError } = await supabase
+    .from("service_package_items")
+    .delete()
+    .eq("package_service_id", serviceId);
+
+  if (deleteError) return { error: "No pudimos guardar el paquete." };
+
+  if (isPackage && componentServiceIds.length > 0) {
+    const { error: insertError } = await supabase.from("service_package_items").insert(
+      componentServiceIds.map((componentServiceId, index) => ({
+        package_service_id: serviceId,
+        component_service_id: componentServiceId,
+        sort_order: index,
+      })),
+    );
+    if (insertError) return { error: "No pudimos guardar el paquete." };
+  }
+
+  revalidatePath("/servicios");
+  revalidatePath(`/servicios/${serviceId}`);
+  return { ok: true };
 }
 
 export async function setServiceStatusAction(

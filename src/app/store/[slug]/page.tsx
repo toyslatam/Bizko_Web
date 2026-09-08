@@ -62,6 +62,22 @@ export default async function PublicStorePage({ params, searchParams }: PageProp
     ]);
 
   const services = (servicesData as PublicService[]) ?? [];
+
+  const packageIncludesByService = new Map<string, string>();
+  if (services.length > 0) {
+    const packageItemsResults = await Promise.all(
+      services.map((s) => supabase.rpc("list_public_package_items", { p_service_id: s.id })),
+    );
+    services.forEach((s, index) => {
+      const items = (packageItemsResults[index].data as { component_name: string; quantity: number }[]) ?? [];
+      if (items.length > 0) {
+        packageIncludesByService.set(
+          s.id,
+          items.map((item) => (item.quantity !== 1 ? `${item.component_name} x${item.quantity}` : item.component_name)).join(", "),
+        );
+      }
+    });
+  }
   const categories = (categoriesData as PublicCategory[]) ?? [];
   let products = (productsData as PublicProduct[]) ?? [];
   const priceRangeByProduct = new Map<string, { min: number; max: number }>(
@@ -95,7 +111,7 @@ export default async function PublicStorePage({ params, searchParams }: PageProp
           <p className="text-sm text-muted-foreground">Elige un servicio para agendar con uno de nuestros profesionales.</p>
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 lg:gap-6 xl:grid-cols-4">
             {services.map((s) => (
-              <ServiceCard key={s.id} slug={slug} service={s} />
+              <ServiceCard key={s.id} slug={slug} service={s} includes={packageIncludesByService.get(s.id)} />
             ))}
           </div>
         </div>

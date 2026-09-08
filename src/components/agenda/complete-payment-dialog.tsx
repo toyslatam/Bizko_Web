@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -51,6 +52,7 @@ export function CompletePaymentDialog({
   const router = useRouter();
   const [paymentMethod, setPaymentMethod] = React.useState<PaymentMethod>("cash");
   const [extraItems, setExtraItems] = React.useState<ExtraItemRow[]>([]);
+  const [serviceNotes, setServiceNotes] = React.useState("");
   const [saving, setSaving] = React.useState(false);
   const [result, setResult] = React.useState<{ saleId: string; totalCents: number } | null>(null);
 
@@ -75,6 +77,7 @@ export function CompletePaymentDialog({
       appointmentId: appointment.id,
       paymentMethod,
       extraItems: validItems.map((r) => ({ productId: r.productId, quantity: r.quantity })),
+      serviceNotes: serviceNotes.trim() || undefined,
     });
     setSaving(false);
 
@@ -179,6 +182,16 @@ export function CompletePaymentDialog({
                   </Button>
                 </div>
               ))}
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Notas del servicio (opcional)</Label>
+              <Textarea
+                value={serviceNotes}
+                onChange={(e) => setServiceNotes(e.target.value)}
+                placeholder="Tono usado, diseño, tratamiento aplicado — quedará en el historial del cliente."
+                rows={3}
+              />
             </div>
 
             <DialogFooter>
