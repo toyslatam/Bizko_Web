@@ -1,5 +1,6 @@
 import "server-only";
 import { createHash, randomInt } from "crypto";
+import { headers } from "next/headers";
 import { Resend } from "resend";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -20,7 +21,14 @@ function getResend(): Resend | null {
   return apiKey ? new Resend(apiKey) : null;
 }
 
-function emailTemplate(title: string, intro: string, code: string): string {
+async function getVerifyUrl(email: string, purpose: VerificationPurpose): Promise<string> {
+  const headerList = await headers();
+  const host = headerList.get("host") ?? "bizko.online";
+  const protocol = headerList.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
+  return `${protocol}://${host}/verificar-codigo?email=${encodeURIComponent(email)}&type=${purpose}`;
+}
+
+function emailTemplate(title: string, intro: string, code: string, verifyUrl: string, ctaLabel: string): string {
   return `
 <div style="margin:0;padding:0;background-color:#f4f3ff;font-family:Arial,Helvetica,sans-serif;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f3ff;padding:32px 16px;">
@@ -35,6 +43,15 @@ function emailTemplate(title: string, intro: string, code: string): string {
           <div style="margin:0 auto 8px auto;text-align:center;">
             <span style="display:inline-block;padding:16px 28px;font-size:32px;font-weight:700;letter-spacing:6px;color:#1e1b4b;background-color:#f4f3ff;border-radius:12px;">${code}</span>
           </div>
+          <table role="presentation" cellpadding="0" cellspacing="0" style="margin:24px auto 0 auto;">
+            <tr><td style="border-radius:999px;background-color:#8b7cf6;">
+              <a href="${verifyUrl}" style="display:inline-block;padding:12px 28px;font-size:14px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:999px;">${ctaLabel}</a>
+            </td></tr>
+          </table>
+          <p style="margin:24px 0 0 0;font-size:12px;line-height:1.6;color:#9ca3af;">
+            Ese botón te lleva a la página donde escribes el código de arriba junto con tu contraseña.
+            Si no funciona, entra directo a <a href="${verifyUrl}" style="color:#8b7cf6;">${verifyUrl}</a>.
+          </p>
           <p style="margin:20px 0 0 0;font-size:12px;line-height:1.6;color:#9ca3af;">
             Este código expira en ${CODE_TTL_MINUTES} minutos. Si no esperabas este correo, puedes ignorarlo.
           </p>
@@ -75,12 +92,15 @@ export async function issueVerificationCode(
   if (insertError) return { error: "No pudimos generar el código. Intenta de nuevo." };
 
   const isInvite = purpose === "invite";
+  const verifyUrl = await getVerifyUrl(email, purpose);
   const html = emailTemplate(
     isInvite ? "Te invitaron a un equipo en bizko" : "Restablece tu contraseña",
     isInvite
       ? "Alguien de tu negocio te dio acceso a bizko. Usa este código para crear tu contraseña."
       : "Pediste cambiar tu contraseña de bizko. Usa este código para elegir una nueva.",
     code,
+    verifyUrl,
+    isInvite ? "Ir a crear mi contraseña" : "Ir a elegir mi contraseña",
   );
 
   const { error: sendError } = await resend.emails.send({
