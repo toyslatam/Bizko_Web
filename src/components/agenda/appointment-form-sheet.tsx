@@ -33,33 +33,48 @@ export function AppointmentFormSheet({
   customers,
   services,
   professionals,
+  initialStartTime,
+  initialProfessionalId,
+  open: controlledOpen,
+  onOpenChange: setControlledOpen,
+  trigger,
 }: {
   date: string;
   customers: Customer[];
   services: Service[];
   professionals: Professional[];
+  /** Prellena hora/profesional al crear desde un espacio vacío del grid de día. */
+  initialStartTime?: string;
+  initialProfessionalId?: string;
+  /** Uso controlado (sin SheetTrigger propio) — para abrir desde un clic en el grid. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  trigger?: React.ReactNode;
 }) {
   const router = useRouter();
-  const [open, setOpen] = React.useState(false);
+  const [uncontrolledOpen, setUncontrolledOpen] = React.useState(false);
+  const open = controlledOpen ?? uncontrolledOpen;
   const emptyValues = React.useMemo<AppointmentInput>(
     () => ({
       appointmentDate: date,
-      startTime: "",
+      startTime: initialStartTime ?? "",
       customerId: "",
       serviceId: "",
-      professionalId: "",
+      professionalId: initialProfessionalId ?? "",
       notes: "",
     }),
-    [date],
+    [date, initialStartTime, initialProfessionalId],
   );
   const [values, setValues] = React.useState<AppointmentInput>(emptyValues);
   const [errors, setErrors] = React.useState<Partial<Record<keyof AppointmentInput, string>>>({});
   const [saving, setSaving] = React.useState(false);
 
   function handleOpenChange(next: boolean) {
-    setOpen(next);
-    if (!next) {
+    setControlledOpen?.(next);
+    setUncontrolledOpen(next);
+    if (next) {
       setValues(emptyValues);
+    } else {
       setErrors({});
     }
   }
@@ -89,11 +104,15 @@ export function AppointmentFormSheet({
 
   return (
     <Sheet open={open} onOpenChange={handleOpenChange}>
-      <SheetTrigger asChild>
-        <Button>
-          <CalendarPlus /> Nueva cita
-        </Button>
-      </SheetTrigger>
+      {trigger !== null && (
+        <SheetTrigger asChild>
+          {trigger ?? (
+            <Button>
+              <CalendarPlus /> Nueva cita
+            </Button>
+          )}
+        </SheetTrigger>
+      )}
       <SheetContent className="overflow-y-auto sm:max-w-md">
         <SheetHeader>
           <SheetTitle>Nueva cita</SheetTitle>

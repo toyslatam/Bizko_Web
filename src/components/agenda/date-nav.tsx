@@ -27,19 +27,21 @@ export function DateNav({ date, view }: { date: string; view: AgendaView }) {
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-1.5">
-      <Button variant="outline" size="icon" onClick={() => shift(-1)}>
-        <ChevronLeft />
-      </Button>
-      <Input
-        type="date"
-        value={date}
-        onChange={(e) => e.target.value && goTo(e.target.value)}
-        className="w-auto"
-      />
-      <Button variant="outline" size="icon" onClick={() => shift(1)}>
-        <ChevronRight />
-      </Button>
+    <div className="flex flex-wrap items-center gap-2">
+      <div className="flex items-center gap-1.5">
+        <Button variant="outline" size="icon" onClick={() => shift(-1)}>
+          <ChevronLeft />
+        </Button>
+        <Input
+          type="date"
+          value={date}
+          onChange={(e) => e.target.value && goTo(e.target.value)}
+          className="w-auto"
+        />
+        <Button variant="outline" size="icon" onClick={() => shift(1)}>
+          <ChevronRight />
+        </Button>
+      </div>
       <Tabs value={view} onValueChange={(v) => goTo(date, v as AgendaView)}>
         <TabsList>
           {VIEW_OPTIONS.map((option) => (

@@ -1,14 +1,11 @@
 import { redirect } from "next/navigation";
-import { CalendarClock } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getSessionContext } from "@/lib/auth/session";
 import { PageHeader } from "@/components/ui/page-header";
-import { EmptyState } from "@/components/ui/empty-state";
 import { DateNav } from "@/components/agenda/date-nav";
 import { AppointmentFormSheet } from "@/components/agenda/appointment-form-sheet";
-import { AppointmentList, type AppointmentRow } from "@/components/agenda/appointment-list";
-import { WeekView } from "@/components/agenda/week-view";
-import { MonthView } from "@/components/agenda/month-view";
+import { AgendaBoard } from "@/components/agenda/agenda-board";
+import type { AppointmentRow } from "@/components/agenda/appointment-list";
 import { monthGridDays, shiftDate, startOfWeek, type AgendaView } from "@/lib/agenda-dates";
 import type { Customer, Product, Professional, Service } from "@/types/database";
 
@@ -122,32 +119,18 @@ export default async function AgendaPage({ searchParams }: PageProps) {
         }
       />
 
-      {view === "day" &&
-        (dayAppointments.length > 0 ? (
-          <AppointmentList
-            appointments={dayAppointments}
-            professionals={professionals}
-            products={products}
-            hasOpenCashRegister={hasOpenCashRegister}
-          />
-        ) : (
-          <EmptyState
-            icon={CalendarClock}
-            title="Sin citas para este día"
-            description="Cuando agendes una cita, aparecerá aquí."
-            action={
-              <AppointmentFormSheet
-                date={date}
-                customers={customers}
-                services={services}
-                professionals={professionals}
-              />
-            }
-          />
-        ))}
-
-      {view === "week" && <WeekView startDate={weekStart} appointments={appointments} />}
-      {view === "month" && <MonthView date={date} appointments={appointments} />}
+      <AgendaBoard
+        view={view}
+        date={date}
+        weekStart={weekStart}
+        appointments={appointments}
+        dayAppointments={dayAppointments}
+        customers={customers}
+        services={services}
+        professionals={professionals}
+        products={products}
+        hasOpenCashRegister={hasOpenCashRegister}
+      />
     </div>
   );
 }
