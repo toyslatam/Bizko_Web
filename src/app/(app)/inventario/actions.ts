@@ -8,6 +8,8 @@ import type { InventoryMovementType } from "@/types/database";
 
 export interface CreateMovementInput {
   productId: string;
+  /** Solo para productos con variantes: el stock vive en la variante. */
+  variantId?: string | null;
   movementType: InventoryMovementType;
   quantity: number;
   reason: string;
@@ -39,6 +41,7 @@ export async function createMovementAction(input: CreateMovementInput): Promise<
     p_reason: input.reason.trim(),
     p_reference_type: "manual",
     p_reference_id: null,
+    p_variant_id: input.variantId ?? null,
   });
 
   if (error) return { error: error.message || "No pudimos registrar el movimiento." };

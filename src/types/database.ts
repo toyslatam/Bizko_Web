@@ -22,7 +22,9 @@ export type BusinessType =
   | "pet_shop"
   | "workshop"
   | "food"
-  | "boutique";
+  | "boutique"
+  /** Sin vertical fijo: tiene todos los módulos y el dueño elige cuáles usa. */
+  | "general";
 
 export type SubscriptionStatus = "trial" | "active" | "past_due" | "canceled" | "expired" | "suspended";
 
@@ -105,7 +107,11 @@ export type FeatureKey =
   | "ai"
   | "automation"
   | "crm"
-  | "marketing";
+  | "marketing"
+  | "pets"
+  | "laundry_orders"
+  | "food_service"
+  | "gallery";
 
 export const ALL_FEATURE_KEYS: FeatureKey[] = [
   "dashboard",
@@ -128,6 +134,10 @@ export const ALL_FEATURE_KEYS: FeatureKey[] = [
   "automation",
   "crm",
   "marketing",
+  "pets",
+  "laundry_orders",
+  "food_service",
+  "gallery",
 ];
 
 export interface FeatureDef {
@@ -816,6 +826,8 @@ export interface InventoryMovement {
   id: string;
   company_id: string;
   product_id: string;
+  /** Presente cuando el movimiento afecta a una variante y no al producto padre. */
+  variant_id: string | null;
   movement_type: InventoryMovementType;
   /** Cantidad firmada ya aplicada al stock (negativa en salidas). */
   quantity: number;

@@ -142,6 +142,35 @@ export const BUSINESS_MODULES: BusinessModuleConfig[] = [
     plannedFeatures: ["Tallas y colores", "Variantes de producto", "Colecciones"],
     navItems: [],
   },
+  {
+    type: "general",
+    slug: "general",
+    emoji: "🧩",
+    name: "Varios",
+    description:
+      "Para negocios que no encajan en un solo rubro. Tiene todos los módulos; eliges cuáles usar desde Configuración.",
+    plannedFeatures: [
+      "Todos los módulos disponibles",
+      "Activa o desactiva cada uno",
+      "Cambia de opinión cuando quieras",
+    ],
+    /**
+     * Único rubro cuyos items van gateados por feature: en el resto, el rubro
+     * ya decide qué pantallas existen, acá las decide el dueño.
+     */
+    navItems: [
+      { label: "Agenda", href: "/agenda", icon: CalendarClock, feature: "appointments" },
+      { label: "Profesionales", href: "/profesionales", icon: Scissors, feature: "appointments" },
+      { label: "Órdenes de trabajo", href: "/ordenes-trabajo", icon: WrenchIcon, feature: "work_orders" },
+      { label: "Vehículos", href: "/vehiculos", icon: Bike, feature: "work_orders" },
+      { label: "Mascotas", href: "/mascotas", icon: PawPrint, feature: "pets" },
+      { label: "Órdenes de lavado", href: "/lavanderia", icon: Shirt, feature: "laundry_orders" },
+      { label: "Mesas", href: "/mesas", icon: UtensilsCrossed, feature: "food_service" },
+      { label: "Cocina", href: "/cocina", icon: ChefHat, feature: "food_service" },
+      { label: "Recetas", href: "/produccion", icon: ChefHat, feature: "recipes" },
+      { label: "Galería de trabajos", href: "/galeria", icon: Images, feature: "gallery" },
+    ],
+  },
 ];
 
 export function getBusinessModule(type: BusinessType): BusinessModuleConfig {

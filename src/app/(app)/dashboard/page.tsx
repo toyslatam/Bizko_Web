@@ -478,9 +478,19 @@ export default async function DashboardPage() {
           return (
             <div className="flex flex-col items-start gap-3 rounded-xl border border-dashed border-brand/40 bg-brand/5 p-4 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-sm text-foreground">
-                💡 ¿{suggested.map((f) => f.hint.replace(/^Actívalo si /, "").replace(/\.$/, "")).join(" o ")}?
-                Puedes activar <span className="font-medium">{suggested.map((f) => f.name).join(" y ")}</span> desde
-                Configuración.
+                {suggested.length > 2 ? (
+                  <>
+                    💡 Hay <span className="font-medium">{suggested.length} módulos</span> que todavía no usas
+                    ({suggested.map((f) => f.name).join(", ")}). Actívalos desde Configuración cuando los
+                    necesites.
+                  </>
+                ) : (
+                  <>
+                    💡 ¿{suggested.map((f) => f.hint.replace(/^Actívalo si /, "").replace(/\.$/, "")).join(" o ")}?
+                    Puedes activar <span className="font-medium">{suggested.map((f) => f.name).join(" y ")}</span>{" "}
+                    desde Configuración.
+                  </>
+                )}
               </p>
               <Button asChild variant="outline" size="sm" className="shrink-0">
                 <Link href="/configuracion?tab=negocio">Ir a Configuración</Link>
