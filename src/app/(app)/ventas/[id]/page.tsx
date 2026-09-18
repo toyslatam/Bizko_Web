@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, CheckCircle2, Package, Wrench } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Package, Printer, Wrench } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getSessionContext } from "@/lib/auth/session";
 import { Badge } from "@/components/ui/badge";
@@ -88,7 +88,14 @@ export default async function SaleDetailPage({
             })}
           </p>
         </div>
-        {canVoid && sale.status === "completed" && <VoidSaleButton saleId={sale.id} />}
+        <div className="flex shrink-0 gap-2">
+          <Button variant="outline" size="sm" asChild>
+            <Link href={`/comprobante/${sale.id}`} target="_blank">
+              <Printer /> Comprobante
+            </Link>
+          </Button>
+          {canVoid && sale.status === "completed" && <VoidSaleButton saleId={sale.id} />}
+        </div>
       </div>
 
       <div className="mt-4 grid gap-3 rounded-xl border border-border bg-card p-4 sm:grid-cols-2">
