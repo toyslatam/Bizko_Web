@@ -69,7 +69,9 @@ export default async function QrProductPage({ params, searchParams }: PageProps)
     .eq("status", "active")
     .order("first_name");
 
-  const canSell = can(session.activeMembership?.role ?? "employee", "ventas.crear");
+  const role = session.activeMembership?.role ?? "employee";
+  const canSell = can(role, "ventas.crear");
+  const canEditPrice = can(role, "ventas.editar_precio");
 
   return (
     <div>
@@ -83,6 +85,7 @@ export default async function QrProductPage({ params, searchParams }: PageProps)
         priceCents={variant ? variant.price_cents : product.price_cents}
         customers={(customers as Customer[] | null) ?? []}
         canSell={canSell}
+        canEditPrice={canEditPrice}
       />
     </div>
   );

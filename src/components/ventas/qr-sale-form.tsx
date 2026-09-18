@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Check, Minus, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -29,6 +30,7 @@ export function QrSaleForm({
   priceCents,
   customers,
   canSell,
+  canEditPrice,
 }: {
   productId: string;
   variantId: string | null;
@@ -38,17 +40,30 @@ export function QrSaleForm({
   priceCents: number;
   customers: Customer[];
   canSell: boolean;
+  /** ventas.editar_precio — permite cobrar distinto a lo que dice la etiqueta. */
+  canEditPrice: boolean;
 }) {
   const router = useRouter();
   const [quantity, setQuantity] = React.useState(1);
+  // Arranca en el precio del producto; se puede ajustar si el rol lo permite
+  // (un descuento de mostrador, un precio pactado).
+  const [priceInput, setPriceInput] = React.useState((priceCents / 100).toString());
   // "" = Cliente general, que es el caso normal al escanear en el mostrador.
   const [customerId, setCustomerId] = React.useState("");
   const [paymentMethod, setPaymentMethod] = React.useState<PaymentMethod>("cash");
   const [saving, setSaving] = React.useState(false);
 
-  const totalCents = priceCents * quantity;
+  const parsedPriceCents = Math.round(Number(priceInput.replace(",", ".")) * 100);
+  const effectivePriceCents =
+    Number.isFinite(parsedPriceCents) && parsedPriceCents >= 0 ? parsedPriceCents : 0;
+  const totalCents = effectivePriceCents * quantity;
 
   async function handleConfirm() {
+    if (effectivePriceCents <= 0) {
+      toast.error("Ingresa un precio válido.");
+      return;
+    }
+
     setSaving(true);
     const result = await createSaleAction({
       customerId: customerId || null,
@@ -63,7 +78,7 @@ export function QrSaleForm({
           variantId,
           name: detail ? `${name} (${detail})` : name,
           quantity,
-          unitPriceCents: priceCents,
+          unitPriceCents: effectivePriceCents,
           discountCents: 0,
         },
       ],
@@ -96,12 +111,29 @@ export function QrSaleForm({
           {detail && <p className="text-sm text-muted-foreground">{detail}</p>}
         </div>
         <p className="font-heading text-4xl font-bold text-foreground">
-          {formatCurrencyCents(priceCents)}
+          {formatCurrencyCents(effectivePriceCents)}
         </p>
+        {canEditPrice && effectivePriceCents !== priceCents && (
+          <p className="text-xs text-muted-foreground">
+            Precio de lista: {formatCurrencyCents(priceCents)}
+          </p>
+        )}
       </div>
 
       {canSell ? (
         <>
+          {canEditPrice && (
+            <div className="space-y-1.5">
+              <Label htmlFor="qrPrice">Precio unitario</Label>
+              <Input
+                id="qrPrice"
+                inputMode="decimal"
+                value={priceInput}
+                onChange={(e) => setPriceInput(e.target.value)}
+              />
+            </div>
+          )}
+
           <div className="space-y-1.5">
             <Label>Cantidad</Label>
             <div className="flex items-center gap-3">
