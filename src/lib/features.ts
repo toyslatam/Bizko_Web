@@ -28,6 +28,7 @@ export const TOGGLEABLE_FEATURES: FeatureKey[] = [
   "laundry_orders",
   "food_service",
   "gallery",
+  "professionals",
   "crm",
   "marketing",
 ];
@@ -52,6 +53,7 @@ const GENERAL_MODE: Partial<Record<FeatureKey, FeatureMode>> = {
   laundry_orders: "optional-off",
   food_service: "optional-off",
   gallery: "optional-off",
+  professionals: "optional-off",
   crm: "optional-off",
   marketing: "optional-off",
 };
@@ -74,6 +76,24 @@ const SERVICES_MODE: Record<VerticalBusinessType, FeatureMode> = {
   laundry: "optional-off",
 };
 
+/**
+ * Profesionales solo existe en los rubros que reparten el trabajo entre varias
+ * personas. Ahí viene encendido pero se puede apagar: un negocio de una sola
+ * persona no necesita administrar un equipo. En el resto no aplica ("off"), y
+ * por eso tampoco aparece como interruptor.
+ */
+const PROFESSIONALS_MODE: Record<VerticalBusinessType, FeatureMode> = {
+  barbershop: "optional-on",
+  pet_shop: "optional-on",
+  workshop: "optional-on",
+  moto_wash: "optional-on",
+  bakery: "off",
+  produce: "off",
+  boutique: "off",
+  laundry: "off",
+  food: "off",
+};
+
 const PRODUCTS_MODE: Record<VerticalBusinessType, FeatureMode> = {
   barbershop: "optional-off",
   workshop: "optional-off",
@@ -90,6 +110,7 @@ function modeFor(feature: FeatureKey, businessType: BusinessType): FeatureMode {
   if (businessType === "general") return GENERAL_MODE[feature] ?? "on";
   if (feature === "services") return SERVICES_MODE[businessType];
   if (feature === "products") return PRODUCTS_MODE[businessType];
+  if (feature === "professionals") return PROFESSIONALS_MODE[businessType];
   return "on";
 }
 
@@ -113,6 +134,10 @@ const FEATURE_TOGGLE_LABELS: Partial<Record<FeatureKey, { name: string; hint: st
   laundry_orders: { name: "Órdenes de lavado", hint: "Órdenes de lavandería con estado de cada prenda." },
   food_service: { name: "Mesas y cocina", hint: "Pedidos en local, mesas y pantalla de cocina." },
   gallery: { name: "Galería de trabajos", hint: "Fotos de trabajos realizados para mostrar a tus clientes." },
+  professionals: {
+    name: "Profesionales",
+    hint: "Actívalo si más de una persona atiende y quieres asignarles servicios y comisiones.",
+  },
   crm: { name: "CRM", hint: "Seguimiento de oportunidades y clientes potenciales." },
   marketing: { name: "Marketing", hint: "Campañas y promociones a tus clientes." },
 };

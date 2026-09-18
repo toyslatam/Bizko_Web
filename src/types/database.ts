@@ -111,7 +111,8 @@ export type FeatureKey =
   | "pets"
   | "laundry_orders"
   | "food_service"
-  | "gallery";
+  | "gallery"
+  | "professionals";
 
 export const ALL_FEATURE_KEYS: FeatureKey[] = [
   "dashboard",
@@ -138,6 +139,7 @@ export const ALL_FEATURE_KEYS: FeatureKey[] = [
   "laundry_orders",
   "food_service",
   "gallery",
+  "professionals",
 ];
 
 export interface FeatureDef {

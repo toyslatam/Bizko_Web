@@ -311,3 +311,34 @@ export async function updateFeatureToggleAction(
   revalidatePath("/dashboard");
   return { ok: true };
 }
+
+/**
+ * Pasa el negocio al rubro "Varios".
+ *
+ * El resto de cambios de rubro siguen bloqueados (ver updateCompanyAction):
+ * saltar de taller a panadería dejaría vehículos y órdenes de trabajo sin
+ * pantalla donde verse. Hacia "Varios" es seguro justamente porque tiene
+ * todos los módulos disponibles: ningún dato queda huérfano, y el dueño
+ * decide después cuáles usar.
+ */
+export async function switchToGeneralBusinessTypeAction(
+  companyId: string,
+): Promise<{ ok: true } | { error: string }> {
+  const session = await getSessionContext();
+  if (!session?.activeMembership) return { error: "No encontramos tu sesión." };
+  if (session.activeMembership.role !== "owner") {
+    return { error: "Solo el dueño puede cambiar el rubro del negocio." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("companies")
+    .update({ business_type: "general", updated_at: new Date().toISOString() })
+    .eq("id", companyId);
+
+  if (error) return { error: "No pudimos cambiar el rubro." };
+
+  revalidatePath("/configuracion");
+  revalidatePath("/dashboard");
+  return { ok: true };
+}
