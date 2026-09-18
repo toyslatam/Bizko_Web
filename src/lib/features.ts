@@ -8,22 +8,73 @@ import type { BusinessType, FeatureKey } from "@/types/database";
  */
 export type FeatureMode = "on" | "off" | "optional-on" | "optional-off";
 
-/** Features que pueden variar por rubro — hoy solo Productos y Servicios. */
-export const TOGGLEABLE_FEATURES: FeatureKey[] = ["products", "services"];
+/**
+ * Features que pueden variar por rubro. Para los rubros con vertical definido
+ * solo Productos y Servicios son opcionales; el resto vienen fijas en "on" y
+ * por lo tanto no se listan ni se tocan. El rubro "general" las abre todas
+ * — ver GENERAL_MODE.
+ */
+export const TOGGLEABLE_FEATURES: FeatureKey[] = [
+  "products",
+  "services",
+  "inventory",
+  "catalog",
+  "orders",
+  "delivery",
+  "appointments",
+  "work_orders",
+  "recipes",
+  "pets",
+  "laundry_orders",
+  "food_service",
+  "gallery",
+  "crm",
+  "marketing",
+];
 
-const SERVICES_MODE: Record<BusinessType, FeatureMode> = {
+/**
+ * Rubro "Varios": todo está disponible y el dueño arma su propio negocio.
+ * Encendidos por defecto los módulos que casi cualquier negocio usa; apagados
+ * los que son propios de un vertical, para no abrumar la navegación el primer
+ * día. Nada acá es definitivo: todo se prende y se apaga en Configuración.
+ */
+const GENERAL_MODE: Partial<Record<FeatureKey, FeatureMode>> = {
+  products: "optional-on",
+  services: "optional-on",
+  inventory: "optional-on",
+  catalog: "optional-on",
+  orders: "optional-on",
+  delivery: "optional-off",
+  appointments: "optional-off",
+  work_orders: "optional-off",
+  recipes: "optional-off",
+  pets: "optional-off",
+  laundry_orders: "optional-off",
+  food_service: "optional-off",
+  gallery: "optional-off",
+  crm: "optional-off",
+  marketing: "optional-off",
+};
+
+type VerticalBusinessType = Exclude<BusinessType, "general">;
+
+const SERVICES_MODE: Record<VerticalBusinessType, FeatureMode> = {
+  // Fijos: Agenda depende de que existan servicios con duración.
   barbershop: "on",
   pet_shop: "on",
   workshop: "on",
   moto_wash: "on",
-  food: "off",
-  bakery: "off",
-  produce: "off",
-  boutique: "off",
-  laundry: "off",
+  // Opcionales: no es lo habitual del rubro, pero pasa — una panadería que
+  // cobra tortas por encargo, una boutique con arreglos de costura, una
+  // lavandería con planchado a domicilio.
+  food: "optional-off",
+  bakery: "optional-off",
+  produce: "optional-off",
+  boutique: "optional-off",
+  laundry: "optional-off",
 };
 
-const PRODUCTS_MODE: Record<BusinessType, FeatureMode> = {
+const PRODUCTS_MODE: Record<VerticalBusinessType, FeatureMode> = {
   barbershop: "optional-off",
   workshop: "optional-off",
   moto_wash: "optional-off",
@@ -36,6 +87,7 @@ const PRODUCTS_MODE: Record<BusinessType, FeatureMode> = {
 };
 
 function modeFor(feature: FeatureKey, businessType: BusinessType): FeatureMode {
+  if (businessType === "general") return GENERAL_MODE[feature] ?? "on";
   if (feature === "services") return SERVICES_MODE[businessType];
   if (feature === "products") return PRODUCTS_MODE[businessType];
   return "on";
@@ -50,6 +102,19 @@ const FEATURE_TOGGLE_LABELS: Partial<Record<FeatureKey, { name: string; hint: st
     name: "Servicios",
     hint: "Catálogo de servicios que ofreces (con precio y duración).",
   },
+  inventory: { name: "Inventario", hint: "Control de existencias, entradas, salidas y ajustes." },
+  catalog: { name: "Catálogo público", hint: "Tu tienda en línea, con enlace para compartir." },
+  orders: { name: "Pedidos", hint: "Pedidos que entran desde el catálogo público." },
+  delivery: { name: "Delivery", hint: "Entregas a domicilio con zonas y repartidores." },
+  appointments: { name: "Agenda", hint: "Citas por profesional, con duración y recordatorios." },
+  work_orders: { name: "Órdenes de trabajo", hint: "Trabajos sobre vehículos o equipos, con repuestos." },
+  recipes: { name: "Recetas y producción", hint: "Recetas, producción diaria y merma." },
+  pets: { name: "Mascotas", hint: "Ficha de cada mascota, vacunas e historial." },
+  laundry_orders: { name: "Órdenes de lavado", hint: "Órdenes de lavandería con estado de cada prenda." },
+  food_service: { name: "Mesas y cocina", hint: "Pedidos en local, mesas y pantalla de cocina." },
+  gallery: { name: "Galería de trabajos", hint: "Fotos de trabajos realizados para mostrar a tus clientes." },
+  crm: { name: "CRM", hint: "Seguimiento de oportunidades y clientes potenciales." },
+  marketing: { name: "Marketing", hint: "Campañas y promociones a tus clientes." },
 };
 
 export interface ToggleableFeature {

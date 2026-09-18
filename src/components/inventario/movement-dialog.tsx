@@ -23,11 +23,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { ProductCombobox } from "@/components/inventario/product-combobox";
+import { StockItemCombobox } from "@/components/inventario/stock-item-combobox";
 import { createMovementAction } from "@/app/(app)/inventario/actions";
 import { ADJUSTMENT_REASONS, OUT_REASONS, formatQuantity } from "@/lib/inventory";
 import { UNIT_SHORT_LABELS } from "@/lib/catalog";
-import type { Product } from "@/types/database";
+import type { StockItem } from "@/lib/stock-items";
 
 type Mode = "in" | "out" | "adjustment";
 
@@ -52,35 +52,35 @@ const MODE_CONFIG: Record<Mode, { label: string; title: string; icon: typeof Arr
   },
 };
 
-export function MovementDialog({ mode, products }: { mode: Mode; products: Product[] }) {
+export function MovementDialog({ mode, items }: { mode: Mode; items: StockItem[] }) {
   const router = useRouter();
   const config = MODE_CONFIG[mode];
   const Icon = config.icon;
 
   const [open, setOpen] = React.useState(false);
-  const [productId, setProductId] = React.useState("");
+  const [itemKey, setItemKey] = React.useState("");
   const [quantity, setQuantity] = React.useState("");
   const [physicalCount, setPhysicalCount] = React.useState("");
   const [reason, setReason] = React.useState<string>(config.reasons[0]);
   const [saving, setSaving] = React.useState(false);
 
-  const selectedProduct = products.find((p) => p.id === productId);
+  const selectedItem = items.find((i) => i.key === itemKey);
 
   function reset() {
-    setProductId("");
+    setItemKey("");
     setQuantity("");
     setPhysicalCount("");
     setReason(config.reasons[0]);
   }
 
   const adjustmentDelta =
-    mode === "adjustment" && selectedProduct && physicalCount !== ""
-      ? Number(physicalCount) - selectedProduct.current_stock
+    mode === "adjustment" && selectedItem && physicalCount !== ""
+      ? Number(physicalCount) - selectedItem.stock
       : null;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!productId) {
+    if (!selectedItem) {
       toast.error("Selecciona un producto.");
       return;
     }
@@ -97,7 +97,8 @@ export function MovementDialog({ mode, products }: { mode: Mode; products: Produ
 
     setSaving(true);
     const result = await createMovementAction({
-      productId,
+      productId: selectedItem.productId,
+      variantId: selectedItem.variantId,
       movementType: mode,
       quantity: qty,
       reason,
@@ -140,11 +141,17 @@ export function MovementDialog({ mode, products }: { mode: Mode; products: Produ
           <div className="space-y-4 py-4">
             <div className="space-y-1.5">
               <Label>Producto</Label>
-              <ProductCombobox products={products} value={productId} onChange={setProductId} />
-              {selectedProduct && (
+              <StockItemCombobox items={items} value={itemKey} onChange={setItemKey} />
+              {selectedItem && (
                 <p className="text-xs text-muted-foreground">
-                  Stock actual: {formatQuantity(selectedProduct.current_stock)}{" "}
-                  {UNIT_SHORT_LABELS[selectedProduct.unit]}
+                  Stock actual: {formatQuantity(selectedItem.stock)}{" "}
+                  {UNIT_SHORT_LABELS[selectedItem.unit]}
+                </p>
+              )}
+              {items.length === 0 && (
+                <p className="text-xs text-muted-foreground">
+                  Ningún producto tiene control de inventario activado todavía. Actívalo al
+                  editar el producto, o agrégale variantes.
                 </p>
               )}
             </div>

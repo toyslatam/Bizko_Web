@@ -12,7 +12,9 @@ import { VariantInventoryList } from "@/components/inventario/variant-inventory-
 import { MovementDialog } from "@/components/inventario/movement-dialog";
 import { can } from "@/lib/permissions";
 import { stockStatus } from "@/lib/inventory";
-import type { Product, ProductCategory, ProductVariant } from "@/types/database";
+import { buildStockItems } from "@/lib/stock-items";
+import { groupAttributesByVariant } from "@/lib/variants";
+import type { Product, ProductCategory, ProductVariant, VariantAttribute } from "@/types/database";
 
 interface PageProps {
   searchParams: Promise<{ q?: string; status?: string; category?: string }>;
@@ -48,6 +50,24 @@ export default async function InventarioPage({ searchParams }: PageProps) {
   const variantProducts =
     (variantProductsData as (Product & { product_variants: ProductVariant[] })[] | null) ?? [];
 
+  // Los movimientos se registran sobre el catálogo completo, no sobre lo que
+  // quedó visible tras aplicar los filtros de la lista.
+  const allTrackedProducts = products;
+
+  const variantIds = variantProducts.flatMap((p) => p.product_variants.map((v) => v.id));
+  const { data: attributeRows } = variantIds.length
+    ? await supabase.from("variant_attributes").select("*").in("variant_id", variantIds)
+    : { data: [] };
+  const attributesByVariant = groupAttributesByVariant(
+    (attributeRows as VariantAttribute[] | null) ?? [],
+  );
+
+  const stockItems = buildStockItems({
+    products: allTrackedProducts,
+    variantProducts,
+    attributesByVariant,
+  });
+
   if (category) products = products.filter((p) => p.category_id === category);
   if (q) {
     const needle = q.toLowerCase();
@@ -72,8 +92,8 @@ export default async function InventarioPage({ searchParams }: PageProps) {
         actions={
           canEdit ? (
             <div className="flex gap-2">
-              <MovementDialog mode="in" products={products} />
-              <MovementDialog mode="adjustment" products={products} />
+              <MovementDialog mode="in" items={stockItems} />
+              <MovementDialog mode="adjustment" items={stockItems} />
               <Button variant="ghost" size="sm" asChild>
                 <Link href="/inventario/movimientos">
                   <History /> Ver movimientos

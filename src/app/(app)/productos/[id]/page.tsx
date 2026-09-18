@@ -19,6 +19,8 @@ import { UNIT_LABELS } from "@/lib/catalog";
 import { formatCurrencyCents } from "@/lib/format";
 import { formatQuantity } from "@/lib/inventory";
 import { groupAttributesByVariant } from "@/lib/variants";
+import { buildStockItems } from "@/lib/stock-items";
+import { ProductQrLabels } from "@/components/productos/product-qr-labels";
 import { can } from "@/lib/permissions";
 import { EmptyState } from "@/components/ui/empty-state";
 import type {
@@ -199,8 +201,39 @@ export default async function ProductDetailPage({
         />
       </div>
 
+      <div className="mt-6">
+        <h2 className="mb-3 font-heading text-base font-semibold text-foreground">
+          Código QR
+        </h2>
+        <ProductQrLabels
+          product={product}
+          variants={variants}
+          attributesByVariant={attributesByVariant}
+        />
+      </div>
+
       {product.has_variants ? (
         <div className="mt-6">
+          {canEditInventory && variants.some((v) => v.status === "active") && (
+            <div className="mb-3 flex justify-end gap-2">
+              <MovementDialog
+                mode="in"
+                items={buildStockItems({
+                  products: [],
+                  variantProducts: [{ ...product, product_variants: variants }],
+                  attributesByVariant,
+                })}
+              />
+              <MovementDialog
+                mode="adjustment"
+                items={buildStockItems({
+                  products: [],
+                  variantProducts: [{ ...product, product_variants: variants }],
+                  attributesByVariant,
+                })}
+              />
+            </div>
+          )}
           <VariantManager
             productId={product.id}
             productName={product.name}
@@ -214,8 +247,22 @@ export default async function ProductDetailPage({
             <h2 className="font-heading text-base font-semibold text-foreground">Inventario</h2>
             {product.track_inventory && canEditInventory && (
               <div className="flex gap-2">
-                <MovementDialog mode="in" products={[product]} />
-                <MovementDialog mode="adjustment" products={[product]} />
+                <MovementDialog
+                  mode="in"
+                  items={buildStockItems({
+                    products: [product],
+                    variantProducts: [],
+                    attributesByVariant,
+                  })}
+                />
+                <MovementDialog
+                  mode="adjustment"
+                  items={buildStockItems({
+                    products: [product],
+                    variantProducts: [],
+                    attributesByVariant,
+                  })}
+                />
               </div>
             )}
           </div>
