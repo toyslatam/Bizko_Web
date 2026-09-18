@@ -69,7 +69,7 @@ export const BUSINESS_MODULES: BusinessModuleConfig[] = [
     navItems: [
       { label: "Vehículos", href: "/vehiculos", icon: Bike },
       { label: "Agenda", href: "/agenda", icon: CalendarClock },
-      { label: "Profesionales", href: "/profesionales", icon: Scissors },
+      { label: "Profesionales", href: "/profesionales", icon: Scissors, feature: "professionals" },
     ],
   },
   {
@@ -81,7 +81,7 @@ export const BUSINESS_MODULES: BusinessModuleConfig[] = [
     plannedFeatures: ["Agenda de citas", "Profesionales y comisiones", "Reserva desde el catálogo público", "Recordatorios"],
     navItems: [
       { label: "Agenda", href: "/agenda", icon: CalendarClock },
-      { label: "Profesionales", href: "/profesionales", icon: Scissors },
+      { label: "Profesionales", href: "/profesionales", icon: Scissors, feature: "professionals" },
       { label: "Galería de trabajos", href: "/galeria", icon: Images },
     ],
   },
@@ -104,7 +104,7 @@ export const BUSINESS_MODULES: BusinessModuleConfig[] = [
     navItems: [
       { label: "Mascotas", href: "/mascotas", icon: PawPrint },
       { label: "Agenda", href: "/agenda", icon: CalendarClock },
-      { label: "Profesionales", href: "/profesionales", icon: Scissors },
+      { label: "Profesionales", href: "/profesionales", icon: Scissors, feature: "professionals" },
     ],
   },
   {
@@ -118,7 +118,7 @@ export const BUSINESS_MODULES: BusinessModuleConfig[] = [
       { label: "Vehículos", href: "/vehiculos", icon: Bike },
       { label: "Órdenes de trabajo", href: "/ordenes-trabajo", icon: WrenchIcon },
       { label: "Agenda", href: "/agenda", icon: CalendarClock },
-      { label: "Profesionales", href: "/profesionales", icon: Scissors },
+      { label: "Profesionales", href: "/profesionales", icon: Scissors, feature: "professionals" },
     ],
   },
   {
@@ -160,7 +160,7 @@ export const BUSINESS_MODULES: BusinessModuleConfig[] = [
      */
     navItems: [
       { label: "Agenda", href: "/agenda", icon: CalendarClock, feature: "appointments" },
-      { label: "Profesionales", href: "/profesionales", icon: Scissors, feature: "appointments" },
+      { label: "Empleados", href: "/profesionales", icon: Scissors, feature: "professionals" },
       { label: "Órdenes de trabajo", href: "/ordenes-trabajo", icon: WrenchIcon, feature: "work_orders" },
       { label: "Vehículos", href: "/vehiculos", icon: Bike, feature: "work_orders" },
       { label: "Mascotas", href: "/mascotas", icon: PawPrint, feature: "pets" },

@@ -14,6 +14,7 @@ import { MonthView } from "@/components/agenda/month-view";
 import { customerFullName } from "@/lib/catalog";
 import type { AppointmentRow } from "@/components/agenda/appointment-list";
 import type { AgendaView } from "@/lib/agenda-dates";
+import type { StaffTerms } from "@/lib/staff-terms";
 import type { Customer, Product, Professional, Service } from "@/types/database";
 
 const EMPTY_FILTERS: AgendaFilters = { search: "", professionalId: "all", serviceId: "all", status: "all" };
@@ -33,6 +34,8 @@ export function AgendaBoard({
   customers,
   services,
   professionals,
+  allowUnassigned,
+  terms,
   products,
   hasOpenCashRegister,
 }: {
@@ -44,6 +47,9 @@ export function AgendaBoard({
   customers: Customer[];
   services: Service[];
   professionals: Professional[];
+  /** En "Varios" la cita depende del servicio: se agenda aunque no haya nadie cargado. */
+  allowUnassigned: boolean;
+  terms: StaffTerms;
   products: Product[];
   hasOpenCashRegister: boolean;
 }) {
@@ -68,15 +74,15 @@ export function AgendaBoard({
     [filteredAppointments, date],
   );
 
-  if (professionals.length === 0) {
+  if (professionals.length === 0 && !allowUnassigned) {
     return (
       <EmptyState
         icon={UserCog}
-        title="No tienes profesionales configurados"
-        description="Agrega al menos un profesional para empezar a agendar citas."
+        title={`No tienes ${terms.plural} configurados`}
+        description={`Agrega al menos un ${terms.singular} para empezar a agendar citas.`}
         action={
           <Button asChild>
-            <Link href="/profesionales">Configurar profesionales</Link>
+            <Link href="/profesionales">Configurar {terms.plural}</Link>
           </Button>
         }
       />
@@ -101,7 +107,12 @@ export function AgendaBoard({
   return (
     <div className="flex flex-col gap-4">
       <AgendaStatsBar appointments={dayAppointments} />
-      <AgendaFiltersBar professionals={professionals} services={services} onFilterChange={setFilters} />
+      <AgendaFiltersBar
+        professionals={professionals}
+        services={services}
+        terms={terms}
+        onFilterChange={setFilters}
+      />
 
       {view === "day" &&
         (filteredDayAppointments.length > 0 ? (
@@ -109,6 +120,8 @@ export function AgendaBoard({
             date={date}
             appointments={filteredDayAppointments}
             professionals={professionals}
+            allowUnassigned={allowUnassigned}
+            terms={terms}
             customers={customers}
             services={services}
             products={products}
@@ -129,6 +142,7 @@ export function AgendaBoard({
                 customers={customers}
                 services={services}
                 professionals={professionals}
+                terms={terms}
               />
             }
           />

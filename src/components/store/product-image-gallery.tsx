@@ -51,7 +51,7 @@ export function ProductImageGallery({
   }
 
   if (slides.length === 1) {
-    return <Image src={slides[0]} alt="" fill className="object-cover" sizes="(min-width: 1024px) 500px, 600px" />;
+    return <Image src={slides[0]} alt="" fill className="object-contain" sizes="(min-width: 1024px) 500px, 600px" />;
   }
 
   function scrollToSlide(index: number) {
@@ -79,7 +79,7 @@ export function ProductImageGallery({
               src={url}
               alt=""
               fill
-              className="object-cover"
+              className="object-contain"
               sizes="(min-width: 1024px) 500px, 600px"
               priority={i === 0}
             />

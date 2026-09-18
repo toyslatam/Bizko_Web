@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Store, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ import {
   updateCompanyAccentColorAction,
   updateCompanySlugAction,
   updateFeatureToggleAction,
+  switchToGeneralBusinessTypeAction,
 } from "@/app/(app)/configuracion/actions";
 import { uploadCompanyFile } from "@/lib/storage";
 import { getBusinessModule } from "@/modules/registry";
@@ -240,6 +242,10 @@ export function CompanySettingsForm({
           features={toggleableFeatures}
           initialValues={featureToggles}
         />
+      )}
+
+      {canEdit && company.business_type !== "general" && (
+        <SwitchToGeneralSection companyId={company.id} />
       )}
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -493,6 +499,47 @@ function FeatureTogglesSection({
           />
         </div>
       ))}
+    </div>
+  );
+}
+
+/**
+ * Cambiar de rubro solo se ofrece hacia "Varios": es el único destino donde
+ * ningún dato queda sin pantalla, porque tiene todos los módulos. Sirve para
+ * un negocio que se registró en un vertical que no le corresponde, o que
+ * simplemente quiere elegir sus módulos a mano.
+ */
+function SwitchToGeneralSection({ companyId }: { companyId: string }) {
+  const router = useRouter();
+  const [saving, setSaving] = React.useState(false);
+
+  async function handleSwitch() {
+    setSaving(true);
+    const result = await switchToGeneralBusinessTypeAction(companyId);
+    setSaving(false);
+
+    if ("error" in result) {
+      toast.error(result.error);
+      return;
+    }
+
+    toast.success("Ahora eliges tú qué módulos usar.");
+    router.refresh();
+  }
+
+  return (
+    <div className="space-y-3 rounded-xl border border-border bg-card p-4">
+      <div>
+        <p className="text-sm font-medium text-foreground">¿Tu negocio no encaja en este rubro?</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Pásate a &quot;Varios&quot; y activa o desactiva cada módulo por tu cuenta. No se
+          pierde nada de lo que ya cargaste, y puedes dejar prendidos los mismos módulos que
+          tienes hoy.
+        </p>
+      </div>
+      <Button type="button" variant="outline" size="sm" onClick={handleSwitch} disabled={saving}>
+        {saving ? "Cambiando..." : "Cambiar a Varios"}
+      </Button>
     </div>
   );
 }

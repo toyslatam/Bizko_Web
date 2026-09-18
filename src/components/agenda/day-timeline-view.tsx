@@ -6,10 +6,13 @@ import { AppointmentCard } from "@/components/agenda/appointment-card";
 import { AppointmentDetailDrawer } from "@/components/agenda/appointment-detail-drawer";
 import { AppointmentFormSheet } from "@/components/agenda/appointment-form-sheet";
 import { formatAppointmentTime } from "@/lib/agenda-status";
+import type { StaffTerms } from "@/lib/staff-terms";
 import type { AppointmentRow } from "@/components/agenda/appointment-list";
 import type { Customer, Product, Professional, Service } from "@/types/database";
 
 const SLOT_MINUTES = 30;
+const UNASSIGNED = "__unassigned__";
+
 const PX_PER_MIN = 2;
 const DEFAULT_RANGE_START = 8 * 60;
 const DEFAULT_RANGE_END = 20 * 60;
@@ -98,6 +101,8 @@ export function DayTimelineView({
   date,
   appointments,
   professionals,
+  allowUnassigned,
+  terms,
   customers,
   services,
   products,
@@ -106,6 +111,9 @@ export function DayTimelineView({
   date: string;
   appointments: AppointmentRow[];
   professionals: Professional[];
+  /** Agrega una columna "Sin asignar" para las citas que no van con nadie. */
+  allowUnassigned: boolean;
+  terms: StaffTerms;
   customers: Customer[];
   services: Service[];
   products: Product[];
@@ -150,16 +158,33 @@ export function DayTimelineView({
     return map;
   }, [services]);
 
-  const appointmentsByProfessional = React.useMemo(() => {
+  /**
+   * Una columna por persona. En "Varios" se suma "Sin asignar", porque ahí la
+   * cita la define el servicio y asignar a alguien es opcional; sin esa
+   * columna esas citas no se verían en ningún lado.
+   */
+  const columns = React.useMemo(() => {
+    const base = professionals.map((p) => ({
+      id: p.id,
+      name: p.name,
+      photoUrl: p.photo_url,
+      assignable: true,
+    }));
+    return allowUnassigned
+      ? [...base, { id: UNASSIGNED, name: "Sin asignar", photoUrl: null, assignable: false }]
+      : base;
+  }, [professionals, allowUnassigned]);
+
+  const appointmentsByColumn = React.useMemo(() => {
     const map = new Map<string, AppointmentRow[]>();
-    for (const professional of professionals) map.set(professional.id, []);
+    for (const column of columns) map.set(column.id, []);
     for (const appointment of appointments) {
-      if (!appointment.professional_id) continue;
-      const bucket = map.get(appointment.professional_id);
+      const key = appointment.professional_id ?? UNASSIGNED;
+      const bucket = map.get(key);
       if (bucket) bucket.push(appointment);
     }
     return map;
-  }, [appointments, professionals]);
+  }, [appointments, columns]);
 
   function openDetail(appointment: AppointmentRow) {
     setSelectedAppointment(appointment);
@@ -171,7 +196,7 @@ export function DayTimelineView({
     setFormOpen(true);
   }
 
-  if (professionals.length === 0) {
+  if (columns.length === 0) {
     return (
       <div className="flex h-40 items-center justify-center rounded-xl border border-dashed border-border text-sm text-muted-foreground">
         Aún no hay profesionales configurados para mostrar la agenda.
@@ -197,21 +222,19 @@ export function DayTimelineView({
           </div>
         </div>
 
-        {professionals.map((professional) => {
+        {columns.map((column) => {
           const laidOut = layoutColumn(
-            appointmentsByProfessional.get(professional.id) ?? [],
+            appointmentsByColumn.get(column.id) ?? [],
             serviceDurations,
           );
           return (
-            <div key={professional.id} className="w-56 shrink-0 border-r border-border last:border-r-0">
+            <div key={column.id} className="w-56 shrink-0 border-r border-border last:border-r-0">
               <div className="flex h-14 items-center gap-2 border-b border-border px-3">
                 <Avatar size="sm">
-                  {professional.photo_url && (
-                    <AvatarImage src={professional.photo_url} alt={professional.name} />
-                  )}
-                  <AvatarFallback>{professional.name.slice(0, 1)}</AvatarFallback>
+                  {column.photoUrl && <AvatarImage src={column.photoUrl} alt={column.name} />}
+                  <AvatarFallback>{column.name.slice(0, 1)}</AvatarFallback>
                 </Avatar>
-                <span className="truncate text-sm font-medium text-foreground">{professional.name}</span>
+                <span className="truncate text-sm font-medium text-foreground">{column.name}</span>
               </div>
 
               <div className="relative" style={{ height: totalMinutes * PX_PER_MIN }}>
@@ -219,7 +242,7 @@ export function DayTimelineView({
                   <button
                     key={minutes}
                     type="button"
-                    onClick={() => openNewAppointment(minutesToTime(minutes), professional.id)}
+                    onClick={() => openNewAppointment(minutesToTime(minutes), column.assignable ? column.id : "")}
                     className="group absolute left-0 flex w-full items-center justify-center border-b border-border/50 transition-colors hover:bg-accent/40"
                     style={{ top: (minutes - rangeStart) * PX_PER_MIN, height: SLOT_MINUTES * PX_PER_MIN }}
                   >
@@ -283,6 +306,7 @@ export function DayTimelineView({
         customers={customers}
         services={services}
         professionals={professionals}
+        terms={terms}
         initialStartTime={newAppointmentSlot?.time}
         initialProfessionalId={newAppointmentSlot?.professionalId}
         open={formOpen}

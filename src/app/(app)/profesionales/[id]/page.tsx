@@ -3,6 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft, Clock, Scissors, Tag } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { staffTermsFor } from "@/lib/staff-terms";
 import { getSessionContext } from "@/lib/auth/session";
 import { StatusBadge } from "@/components/catalog/status-badge";
 import { ToggleStatusButton } from "@/components/catalog/toggle-status-button";
@@ -94,7 +95,11 @@ export default async function ProfessionalDetailPage({
           </div>
         </div>
         <div className="flex shrink-0 gap-2">
-          <ProfessionalFormSheet companyId={companyId} professional={professional} />
+          <ProfessionalFormSheet
+            companyId={companyId}
+            professional={professional}
+            terms={staffTermsFor(session.activeCompany.business_type)}
+          />
           <ToggleStatusButton
             status={professional.status}
             entityLabel="Profesional"

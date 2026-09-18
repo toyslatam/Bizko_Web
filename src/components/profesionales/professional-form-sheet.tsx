@@ -25,6 +25,8 @@ import {
 import { uploadCompanyFile } from "@/lib/storage";
 import { WORK_DAY_LABELS } from "@/lib/professionals";
 import { cn } from "@/lib/utils";
+import type { StaffTerms } from "@/lib/staff-terms";
+import { capitalize } from "@/lib/staff-terms";
 import type { Professional } from "@/types/database";
 
 const EMPTY: ProfessionalInput = {
@@ -39,9 +41,11 @@ const EMPTY: ProfessionalInput = {
 export function ProfessionalFormSheet({
   companyId,
   professional,
+  terms,
 }: {
   companyId: string;
   professional?: Professional;
+  terms: StaffTerms;
 }) {
   const router = useRouter();
   const isEdit = Boolean(professional);
@@ -105,7 +109,9 @@ export function ProfessionalFormSheet({
       return;
     }
 
-    toast.success(isEdit ? "Profesional actualizado." : "Profesional creado correctamente.");
+    toast.success(
+      isEdit ? `${capitalize(terms.singular)} actualizado.` : `${capitalize(terms.singular)} creado correctamente.`,
+    );
     setOpen(false);
     if (!isEdit) setValues(EMPTY);
     router.refresh();
@@ -120,15 +126,17 @@ export function ProfessionalFormSheet({
           </Button>
         ) : (
           <Button>
-            <Scissors /> Nuevo profesional
+            <Scissors /> {terms.newLabel}
           </Button>
         )}
       </SheetTrigger>
       <SheetContent className="overflow-y-auto sm:max-w-md">
         <SheetHeader>
-          <SheetTitle>{isEdit ? "Editar profesional" : "Nuevo profesional"}</SheetTitle>
+          <SheetTitle>{isEdit ? `Editar ${terms.singular}` : terms.newLabel}</SheetTitle>
           <SheetDescription>
-            {isEdit ? "Actualiza la información del profesional." : "Agrega un profesional a tu equipo."}
+            {isEdit
+              ? `Actualiza la información d${terms.theSingular.slice(1)}.`
+              : `Agrega un ${terms.singular} a tu equipo.`}
           </SheetDescription>
         </SheetHeader>
 
@@ -246,7 +254,7 @@ export function ProfessionalFormSheet({
 
         <SheetFooter>
           <Button type="submit" onClick={handleSubmit} disabled={saving || uploading}>
-            {saving ? "Guardando..." : isEdit ? "Guardar cambios" : "Crear profesional"}
+            {saving ? "Guardando..." : isEdit ? "Guardar cambios" : `Crear ${terms.singular}`}
           </Button>
         </SheetFooter>
       </SheetContent>

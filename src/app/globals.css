@@ -171,24 +171,3 @@
     @apply font-heading;
   }
 }
-
-/* Etiquetas QR de producto: al imprimir sale solo la hoja de etiquetas, sin la
-   navegación ni el resto de la ficha. Ver ProductQrLabels. */
-@media print {
-  body * {
-    visibility: hidden;
-  }
-
-  #qr-labels,
-  #qr-labels * {
-    visibility: visible;
-  }
-
-  #qr-labels {
-    position: absolute;
-    inset: 0;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8mm;
-    padding: 10mm;
-  }
-}
