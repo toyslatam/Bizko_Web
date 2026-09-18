@@ -127,11 +127,16 @@ export function ProductQuickView({
         </DialogDescription>
 
         <div className="grid max-h-[85vh] grid-cols-1 overflow-y-auto sm:grid-cols-2 sm:overflow-visible">
-          <div className="relative aspect-square w-full shrink-0 bg-muted sm:aspect-auto sm:h-full">
+          {/*
+            Cuadrado en todos los tamaños: con `sm:aspect-auto sm:h-full` el
+            contenedor se estiraba al alto de la columna de texto, quedaba alto y
+            angosto, y `object-cover` recortaba el producto por los lados.
+          */}
+          <div className="relative aspect-square w-full shrink-0 self-start bg-muted">
             {galleryImages.length > 0 ? (
               <ProductImageGallery primaryImageUrl={product.image_url} images={galleryImages} />
             ) : product.image_url ? (
-              <Image src={product.image_url} alt="" fill className="object-cover" sizes="500px" />
+              <Image src={product.image_url} alt="" fill className="object-contain" sizes="500px" />
             ) : (
               <div className="flex size-full items-center justify-center">
                 <Package className="size-12 text-muted-foreground" />
