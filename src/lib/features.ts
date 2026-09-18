@@ -1,4 +1,5 @@
 import type { BusinessType, FeatureKey } from "@/types/database";
+import { capitalize, staffTermsFor } from "@/lib/staff-terms";
 
 /**
  * "on"/"off" = fijo, no se puede tocar desde Configuración (ej. un
@@ -151,10 +152,19 @@ export interface ToggleableFeature {
 
 /** Solo las features que este rubro puede prender/apagar — las fijas no se listan. */
 export function getToggleableFeaturesForBusiness(businessType: BusinessType): ToggleableFeature[] {
+  const terms = staffTermsFor(businessType);
+
   return TOGGLEABLE_FEATURES.filter((feature) => !isFeatureFixed(feature, businessType)).map((feature) => ({
     feature,
-    name: FEATURE_TOGGLE_LABELS[feature]?.name ?? feature,
-    hint: FEATURE_TOGGLE_LABELS[feature]?.hint ?? "",
+    // "Profesionales" o "Empleados" según el rubro — ver staffTermsFor.
+    name:
+      feature === "professionals"
+        ? capitalize(terms.plural)
+        : FEATURE_TOGGLE_LABELS[feature]?.name ?? feature,
+    hint:
+      feature === "professionals"
+        ? `Actívalo si más de una persona atiende y quieres asignarle servicios y comisiones.`
+        : FEATURE_TOGGLE_LABELS[feature]?.hint ?? "",
     defaultEnabled: defaultFeatureEnabled(feature, businessType),
   }));
 }

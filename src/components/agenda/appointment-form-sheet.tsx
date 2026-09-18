@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/sheet";
 import { CustomerCombobox } from "@/components/ventas/customer-combobox";
 import { createAppointmentAction, type AppointmentInput } from "@/app/(app)/agenda/actions";
+import { capitalize, type StaffTerms } from "@/lib/staff-terms";
 import type { Customer, Professional, Service } from "@/types/database";
 
 export function AppointmentFormSheet({
@@ -33,6 +34,7 @@ export function AppointmentFormSheet({
   customers,
   services,
   professionals,
+  terms,
   initialStartTime,
   initialProfessionalId,
   open: controlledOpen,
@@ -43,6 +45,7 @@ export function AppointmentFormSheet({
   customers: Customer[];
   services: Service[];
   professionals: Professional[];
+  terms: StaffTerms;
   /** Prellena hora/profesional al crear desde un espacio vacío del grid de día. */
   initialStartTime?: string;
   initialProfessionalId?: string;
@@ -180,13 +183,13 @@ export function AppointmentFormSheet({
             </div>
 
             <div className="space-y-1.5">
-              <Label>Profesional</Label>
+              <Label>{capitalize(terms.singular)}</Label>
               <Select
                 value={values.professionalId || "none"}
                 onValueChange={(v) => patch("professionalId", v === "none" ? "" : v)}
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Selecciona un profesional" />
+                  <SelectValue placeholder={`Selecciona un ${terms.singular}`} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">Sin asignar</SelectItem>

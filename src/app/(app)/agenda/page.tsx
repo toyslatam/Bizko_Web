@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { DateNav } from "@/components/agenda/date-nav";
 import { AppointmentFormSheet } from "@/components/agenda/appointment-form-sheet";
 import { AgendaBoard } from "@/components/agenda/agenda-board";
+import { agendaAllowsUnassigned, staffTermsFor } from "@/lib/staff-terms";
 import type { AppointmentRow } from "@/components/agenda/appointment-list";
 import { monthGridDays, shiftDate, startOfWeek, type AgendaView } from "@/lib/agenda-dates";
 import type { Customer, Product, Professional, Service } from "@/types/database";
@@ -110,6 +111,7 @@ export default async function AgendaPage({ searchParams }: PageProps) {
           <div className="flex flex-wrap items-center gap-2">
             <DateNav date={date} view={view} />
             <AppointmentFormSheet
+              terms={staffTermsFor(session.activeCompany.business_type)}
               date={date}
               customers={customers}
               services={services}
@@ -130,6 +132,8 @@ export default async function AgendaPage({ searchParams }: PageProps) {
         professionals={professionals}
         products={products}
         hasOpenCashRegister={hasOpenCashRegister}
+        allowUnassigned={agendaAllowsUnassigned(session.activeCompany.business_type)}
+        terms={staffTermsFor(session.activeCompany.business_type)}
       />
     </div>
   );

@@ -160,7 +160,7 @@ export const BUSINESS_MODULES: BusinessModuleConfig[] = [
      */
     navItems: [
       { label: "Agenda", href: "/agenda", icon: CalendarClock, feature: "appointments" },
-      { label: "Profesionales", href: "/profesionales", icon: Scissors, feature: "professionals" },
+      { label: "Empleados", href: "/profesionales", icon: Scissors, feature: "professionals" },
       { label: "Órdenes de trabajo", href: "/ordenes-trabajo", icon: WrenchIcon, feature: "work_orders" },
       { label: "Vehículos", href: "/vehiculos", icon: Bike, feature: "work_orders" },
       { label: "Mascotas", href: "/mascotas", icon: PawPrint, feature: "pets" },

@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { APPOINTMENT_STATUS_LABELS } from "@/lib/catalog";
+import { capitalize, type StaffTerms } from "@/lib/staff-terms";
 import type { Professional, Service } from "@/types/database";
 
 export type AgendaFilters = {
@@ -32,10 +33,12 @@ const STATUS_TABS: { value: string; label: string }[] = [
 
 export function AgendaFiltersBar({
   professionals,
+  terms,
   services,
   onFilterChange,
 }: {
   professionals: Professional[];
+  terms: StaffTerms;
   services: Service[];
   onFilterChange: (filters: AgendaFilters) => void;
 }) {
@@ -78,10 +81,10 @@ export function AgendaFiltersBar({
           }}
         >
           <SelectTrigger className="w-auto min-w-32">
-            <SelectValue placeholder="Profesional" />
+            <SelectValue placeholder={capitalize(terms.singular)} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todos los profesionales</SelectItem>
+            <SelectItem value="all">Todos los {terms.plural}</SelectItem>
             {professionals.map((p) => (
               <SelectItem key={p.id} value={p.id}>
                 {p.name}
