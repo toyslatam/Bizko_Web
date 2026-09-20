@@ -36,7 +36,9 @@ export function QrLabelCard({ label, size = 132 }: { label: QrLabel; size?: numb
       <p className="text-sm font-medium text-foreground">{label.name}</p>
       {label.detail && <p className="text-xs text-muted-foreground">{label.detail}</p>}
       <p className="font-heading text-lg font-semibold text-foreground">
-        {formatCurrencyCents(label.priceCents)}
+        {label.priceMaxCents === null
+          ? formatCurrencyCents(label.priceCents)
+          : `${formatCurrencyCents(label.priceCents)} – ${formatCurrencyCents(label.priceMaxCents)}`}
       </p>
     </div>
   );

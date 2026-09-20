@@ -205,11 +205,7 @@ export default async function ProductDetailPage({
         <h2 className="mb-3 font-heading text-base font-semibold text-foreground">
           Código QR
         </h2>
-        <ProductQrLabels
-          product={product}
-          variants={variants}
-          attributesByVariant={attributesByVariant}
-        />
+        <ProductQrLabels product={product} variants={variants} />
       </div>
 
       {product.has_variants ? (
