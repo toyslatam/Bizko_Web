@@ -5,14 +5,14 @@ import Link from "next/link";
 import { Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { QrLabelCard } from "@/components/productos/qr-label-card";
-import { buildQrLabels } from "@/lib/qr";
+import { buildQrLabel } from "@/lib/qr";
 import type { Product, ProductVariant } from "@/types/database";
 
 /**
- * Vista previa de las etiquetas dentro de la ficha del producto. Imprimir
- * abre /etiquetas/[id], una página sin navegación: intentar imprimir desde
- * acá salían seis hojas, porque ocultar el resto de la app con `visibility`
- * no le quita el espacio que ocupa.
+ * Vista previa de la etiqueta dentro de la ficha del producto. Imprimir abre
+ * /etiquetas/[id], una página sin navegación: intentar imprimir desde acá
+ * salían seis hojas, porque ocultar el resto de la app con `visibility` no le
+ * quita el espacio que ocupa.
  */
 export function ProductQrLabels({
   product,
@@ -31,23 +31,15 @@ export function ProductQrLabels({
     setOrigin(window.location.origin);
   }, []);
 
-  const labels = buildQrLabels({ product, variants, origin });
-
-  if (labels.length === 0) {
-    return (
-      <p className="text-sm text-muted-foreground">
-        Agrega al menos una variante activa para generar sus códigos QR.
-      </p>
-    );
-  }
+  const label = buildQrLabel({ product, variants, origin });
 
   return (
     <div>
       <div className="mb-3 flex items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">
-          {labels.length === 1
-            ? "Imprime esta etiqueta y pégala en el producto o la estantería."
-            : `${labels.length} etiquetas, una por variante.`}
+          {product.has_variants
+            ? "Un solo código para el producto: al escanearlo se elige la variante."
+            : "Imprime esta etiqueta y pégala en el producto o la estantería."}
         </p>
         <Button variant="outline" size="sm" asChild>
           <Link href={`/etiquetas/${product.id}`} target="_blank">
@@ -56,10 +48,8 @@ export function ProductQrLabels({
         </Button>
       </div>
 
-      <div className="grid grid-cols-[repeat(auto-fill,minmax(210px,1fr))] gap-3">
-        {labels.map((label) => (
-          <QrLabelCard key={label.key} label={label} />
-        ))}
+      <div className="max-w-[240px]">
+        <QrLabelCard label={label} />
       </div>
     </div>
   );
