@@ -6,7 +6,7 @@ import { Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { QrLabelCard } from "@/components/productos/qr-label-card";
 import { buildQrLabels } from "@/lib/qr";
-import type { Product, ProductVariant, VariantAttribute } from "@/types/database";
+import type { Product, ProductVariant } from "@/types/database";
 
 /**
  * Vista previa de las etiquetas dentro de la ficha del producto. Imprimir
@@ -17,11 +17,9 @@ import type { Product, ProductVariant, VariantAttribute } from "@/types/database
 export function ProductQrLabels({
   product,
   variants,
-  attributesByVariant,
 }: {
   product: Product;
   variants: ProductVariant[];
-  attributesByVariant: Map<string, VariantAttribute[]>;
 }) {
   const [origin, setOrigin] = React.useState("");
 
@@ -33,7 +31,7 @@ export function ProductQrLabels({
     setOrigin(window.location.origin);
   }, []);
 
-  const labels = buildQrLabels({ product, variants, attributesByVariant, origin });
+  const labels = buildQrLabels({ product, variants, origin });
 
   if (labels.length === 0) {
     return (

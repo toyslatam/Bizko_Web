@@ -3,7 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { getSessionContext } from "@/lib/auth/session";
 import { PageHeader } from "@/components/ui/page-header";
 import { QrSaleForm } from "@/components/ventas/qr-sale-form";
-import { variantLabel } from "@/lib/variants";
+import { variantLabel, groupAttributesByVariant } from "@/lib/variants";
+import type { QrVariantOption } from "@/lib/qr";
 import { can } from "@/lib/permissions";
 import type { Customer, Product, ProductVariant, VariantAttribute } from "@/types/database";
 
@@ -41,25 +42,39 @@ export default async function QrProductPage({ params, searchParams }: PageProps)
   const product = productData as Product | null;
   if (!product) notFound();
 
-  let variant: ProductVariant | null = null;
-  let detail = "";
+  // Un producto tiene un único QR: si hay variantes, se eligen al confirmar.
+  // `?v=` sigue aceptándose para las etiquetas impresas con el esquema viejo,
+  // y llega como preselección.
+  let variantOptions: QrVariantOption[] = [];
 
-  if (variantId) {
-    const { data: variantData } = await supabase
+  if (product.has_variants) {
+    const { data: variantsData } = await supabase
       .from("product_variants")
       .select("*")
       .eq("company_id", companyId)
       .eq("product_id", product.id)
-      .eq("id", variantId)
-      .maybeSingle();
-    variant = variantData as ProductVariant | null;
-    if (!variant) notFound();
+      .eq("status", "active")
+      .order("created_at");
 
-    const { data: attrs } = await supabase
-      .from("variant_attributes")
-      .select("*")
-      .eq("variant_id", variant.id);
-    detail = variantLabel((attrs as VariantAttribute[] | null) ?? []);
+    const variants = (variantsData as ProductVariant[] | null) ?? [];
+
+    if (variants.length > 0) {
+      const { data: attrs } = await supabase
+        .from("variant_attributes")
+        .select("*")
+        .in("variant_id", variants.map((v) => v.id));
+      const attributesByVariant = groupAttributesByVariant(
+        (attrs as VariantAttribute[] | null) ?? [],
+      );
+
+      variantOptions = variants.map((v) => ({
+        id: v.id,
+        label: variantLabel(attributesByVariant.get(v.id) ?? []),
+        priceCents: v.price_cents,
+        stock: v.stock,
+        imageUrl: v.image_url,
+      }));
+    }
   }
 
   const { data: customers } = await supabase
@@ -78,11 +93,11 @@ export default async function QrProductPage({ params, searchParams }: PageProps)
       <PageHeader title="Venta rápida" description="Escaneaste la etiqueta de este producto." />
       <QrSaleForm
         productId={product.id}
-        variantId={variant?.id ?? null}
         name={product.name}
-        detail={detail}
-        imageUrl={variant?.image_url ?? product.image_url}
-        priceCents={variant ? variant.price_cents : product.price_cents}
+        imageUrl={product.image_url}
+        basePriceCents={product.price_cents}
+        variants={variantOptions}
+        initialVariantId={variantId ?? null}
         customers={(customers as Customer[] | null) ?? []}
         canSell={canSell}
         canEditPrice={canEditPrice}

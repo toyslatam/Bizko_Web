@@ -32,7 +32,12 @@ export function AppShell({
 }) {
   return (
     <div className="flex min-h-dvh bg-background">
-      <Sidebar businessType={businessType} enabledFeatures={enabledFeatures} />
+      <Sidebar
+        businessType={businessType}
+        enabledFeatures={enabledFeatures}
+        subscription={subscription}
+        plan={plan}
+      />
       <div className="flex min-w-0 flex-1 flex-col">
         <PlanBanner subscription={subscription} plan={plan} />
         <TopBar

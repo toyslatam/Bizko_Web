@@ -19,46 +19,77 @@ import { CustomerCombobox } from "@/components/ventas/customer-combobox";
 import { createSaleAction } from "@/app/(app)/ventas/actions";
 import { PAYMENT_METHOD_LABELS } from "@/lib/sales";
 import { formatCurrencyCents } from "@/lib/format";
+import { cn } from "@/lib/utils";
+import type { QrVariantOption } from "@/lib/qr";
 import type { Customer, PaymentMethod } from "@/types/database";
 
 export function QrSaleForm({
   productId,
-  variantId,
   name,
-  detail,
   imageUrl,
-  priceCents,
+  basePriceCents,
+  variants,
+  initialVariantId,
   customers,
   canSell,
   canEditPrice,
 }: {
   productId: string;
-  variantId: string | null;
   name: string;
-  detail: string;
   imageUrl: string | null;
-  priceCents: number;
+  /** Precio del producto; solo se usa cuando no hay variantes. */
+  basePriceCents: number;
+  /** Vacío si el producto no tiene variantes. */
+  variants: QrVariantOption[];
+  /** Preselección desde `?v=`, para etiquetas impresas con el esquema viejo. */
+  initialVariantId: string | null;
   customers: Customer[];
   canSell: boolean;
-  /** ventas.editar_precio — permite cobrar distinto a lo que dice la etiqueta. */
   canEditPrice: boolean;
 }) {
   const router = useRouter();
+  const hasVariants = variants.length > 0;
+
+  // Con una sola variante no tiene sentido hacer elegir: se preselecciona.
+  const [variantId, setVariantId] = React.useState<string | null>(() => {
+    if (!hasVariants) return null;
+    if (initialVariantId && variants.some((v) => v.id === initialVariantId)) {
+      return initialVariantId;
+    }
+    return variants.length === 1 ? variants[0].id : null;
+  });
+
+  const selectedVariant = variants.find((v) => v.id === variantId) ?? null;
+  const listPriceCents = selectedVariant ? selectedVariant.priceCents : basePriceCents;
+
   const [quantity, setQuantity] = React.useState(1);
-  // Arranca en el precio del producto; se puede ajustar si el rol lo permite
-  // (un descuento de mostrador, un precio pactado).
-  const [priceInput, setPriceInput] = React.useState((priceCents / 100).toString());
+  const [priceInput, setPriceInput] = React.useState((listPriceCents / 100).toString());
   // "" = Cliente general, que es el caso normal al escanear en el mostrador.
   const [customerId, setCustomerId] = React.useState("");
   const [paymentMethod, setPaymentMethod] = React.useState<PaymentMethod>("cash");
   const [saving, setSaving] = React.useState(false);
+
+  // Cada variante tiene su propio precio, así que el campo editable sigue a la
+  // selección. Se ajusta durante el render, no en un efecto, para que nunca se
+  // pinte un precio que no corresponde a la variante elegida.
+  const lastPriceRef = React.useRef(listPriceCents);
+  if (lastPriceRef.current !== listPriceCents) {
+    lastPriceRef.current = listPriceCents;
+    setPriceInput((listPriceCents / 100).toString());
+  }
 
   const parsedPriceCents = Math.round(Number(priceInput.replace(",", ".")) * 100);
   const effectivePriceCents =
     Number.isFinite(parsedPriceCents) && parsedPriceCents >= 0 ? parsedPriceCents : 0;
   const totalCents = effectivePriceCents * quantity;
 
+  const needsVariant = hasVariants && !selectedVariant;
+
   async function handleConfirm() {
+    if (needsVariant) {
+      toast.error("Elige una variante.");
+      return;
+    }
     if (effectivePriceCents <= 0) {
       toast.error("Ingresa un precio válido.");
       return;
@@ -75,8 +106,8 @@ export function QrSaleForm({
           itemType: "product",
           productId,
           serviceId: null,
-          variantId,
-          name: detail ? `${name} (${detail})` : name,
+          variantId: selectedVariant?.id ?? null,
+          name: selectedVariant ? `${name} (${selectedVariant.label})` : name,
           quantity,
           unitPriceCents: effectivePriceCents,
           discountCents: 0,
@@ -94,12 +125,14 @@ export function QrSaleForm({
     router.push(`/ventas/${result.id}`);
   }
 
+  const shownImage = selectedVariant?.imageUrl ?? imageUrl;
+
   return (
     <div className="mx-auto mt-6 max-w-md space-y-5">
       <div className="flex flex-col items-center gap-3 rounded-xl border border-border bg-card p-6 text-center">
-        {imageUrl && (
+        {shownImage && (
           <Image
-            src={imageUrl}
+            src={shownImage}
             alt={name}
             width={120}
             height={120}
@@ -108,20 +141,58 @@ export function QrSaleForm({
         )}
         <div>
           <p className="font-heading text-xl font-semibold text-foreground">{name}</p>
-          {detail && <p className="text-sm text-muted-foreground">{detail}</p>}
+          {selectedVariant && (
+            <p className="text-sm text-muted-foreground">{selectedVariant.label}</p>
+          )}
         </div>
         <p className="font-heading text-4xl font-bold text-foreground">
-          {formatCurrencyCents(effectivePriceCents)}
+          {needsVariant ? "—" : formatCurrencyCents(effectivePriceCents)}
         </p>
-        {canEditPrice && effectivePriceCents !== priceCents && (
+        {canEditPrice && !needsVariant && effectivePriceCents !== listPriceCents && (
           <p className="text-xs text-muted-foreground">
-            Precio de lista: {formatCurrencyCents(priceCents)}
+            Precio de lista: {formatCurrencyCents(listPriceCents)}
           </p>
         )}
       </div>
 
       {canSell ? (
         <>
+          {hasVariants && (
+            <div className="space-y-1.5">
+              <Label>Variante</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {variants.map((variant) => {
+                  const active = variant.id === variantId;
+                  const out = variant.stock <= 0;
+                  return (
+                    <button
+                      key={variant.id}
+                      type="button"
+                      onClick={() => setVariantId(variant.id)}
+                      className={cn(
+                        "flex flex-col items-start gap-0.5 rounded-lg border p-3 text-left transition-colors",
+                        active ? "border-brand bg-brand/10" : "border-border hover:bg-muted",
+                      )}
+                    >
+                      <span className="text-sm font-medium text-foreground">{variant.label}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {formatCurrencyCents(variant.priceCents)}
+                      </span>
+                      <span
+                        className={cn(
+                          "text-xs",
+                          out ? "text-destructive" : "text-muted-foreground",
+                        )}
+                      >
+                        {out ? "Sin stock" : `${variant.stock} en stock`}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {canEditPrice && (
             <div className="space-y-1.5">
               <Label htmlFor="qrPrice">Precio unitario</Label>
@@ -130,6 +201,7 @@ export function QrSaleForm({
                 inputMode="decimal"
                 value={priceInput}
                 onChange={(e) => setPriceInput(e.target.value)}
+                disabled={needsVariant}
               />
             </div>
           )}
@@ -186,9 +258,18 @@ export function QrSaleForm({
             </Select>
           </div>
 
-          <Button className="w-full" size="lg" onClick={handleConfirm} disabled={saving}>
+          <Button
+            className="w-full"
+            size="lg"
+            onClick={handleConfirm}
+            disabled={saving || needsVariant}
+          >
             <Check />
-            {saving ? "Registrando..." : `Confirmar venta · ${formatCurrencyCents(totalCents)}`}
+            {needsVariant
+              ? "Elige una variante"
+              : saving
+                ? "Registrando..."
+                : `Confirmar venta · ${formatCurrencyCents(totalCents)}`}
           </Button>
         </>
       ) : (

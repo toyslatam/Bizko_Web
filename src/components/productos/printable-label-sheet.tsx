@@ -8,16 +8,14 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { QrLabelCard } from "@/components/productos/qr-label-card";
 import { buildQrLabels } from "@/lib/qr";
-import type { Product, ProductVariant, VariantAttribute } from "@/types/database";
+import type { Product, ProductVariant } from "@/types/database";
 
 export function PrintableLabelSheet({
   product,
   variants,
-  attributesByVariant,
 }: {
   product: Product;
   variants: ProductVariant[];
-  attributesByVariant: Map<string, VariantAttribute[]>;
 }) {
   const [origin, setOrigin] = React.useState("");
   /** Las impresoras de etiquetas (ej. Zebra) tratan cada página como una etiqueta. */
@@ -28,7 +26,7 @@ export function PrintableLabelSheet({
     setOrigin(window.location.origin);
   }, []);
 
-  const labels = buildQrLabels({ product, variants, attributesByVariant, origin });
+  const labels = buildQrLabels({ product, variants, origin });
 
   return (
     <div className="mx-auto w-full max-w-4xl p-6">
