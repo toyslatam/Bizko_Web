@@ -56,7 +56,15 @@ export function PrintableCatalog({
         @media print {
           @page { margin: 0; }
           .no-print { display: none !important; }
-          .catalog { padding: 10mm; }
+          /*
+            Una sola columna en papel. Con dos, cada ficha queda en ~350px y a
+            ese ancho el QR se monta sobre el nombre y las variantes se pisan.
+          */
+          .catalog {
+            padding: 10mm;
+            grid-template-columns: 1fr !important;
+            gap: 6mm !important;
+          }
           .catalog-entry { break-inside: avoid; page-break-inside: avoid; }
         }
       `}</style>
@@ -117,7 +125,7 @@ export function PrintableCatalog({
                   </div>
 
                   <div className="min-w-0 flex-1">
-                    <p className="font-heading text-base font-semibold text-foreground">
+                    <p className="font-heading text-base font-semibold break-words text-foreground">
                       {product.name}
                     </p>
                     {categoryName && (
@@ -153,19 +161,20 @@ export function PrintableCatalog({
                     <p className="mb-1.5 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                       {variants.length} variantes
                     </p>
-                    <ul className="space-y-1">
+                    {/*
+                      Grilla, no flex: con columnas explícitas el precio y el
+                      stock nunca se montan sobre un nombre largo.
+                    */}
+                    <ul className="grid grid-cols-[1fr_auto_auto] gap-x-3 gap-y-1 text-xs">
                       {variants.map((variant) => (
-                        <li
-                          key={variant.id}
-                          className="flex items-baseline justify-between gap-2 text-xs"
-                        >
-                          <span className="min-w-0 flex-1 text-foreground">
+                        <li key={variant.id} className="contents">
+                          <span className="break-words text-foreground">
                             {variantLabels[variant.id] || "Variante"}
                           </span>
-                          <span className="shrink-0 text-muted-foreground">
+                          <span className="text-right whitespace-nowrap text-muted-foreground">
                             {formatCurrencyCents(variant.price_cents)}
                           </span>
-                          <span className="w-16 shrink-0 text-right text-muted-foreground">
+                          <span className="text-right whitespace-nowrap text-muted-foreground">
                             {formatQuantity(variant.stock)} {UNIT_SHORT_LABELS[product.unit]}
                           </span>
                         </li>
