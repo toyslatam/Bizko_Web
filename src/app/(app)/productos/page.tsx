@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
-import { Package } from "lucide-react";
+import Link from "next/link";
+import { Package, Printer } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
 import { getSessionContext } from "@/lib/auth/session";
 import { PageHeader } from "@/components/ui/page-header";
@@ -45,6 +47,16 @@ export default async function ProductosPage({ searchParams }: PageProps) {
   const products = (data ?? []) as Product[];
   const hasFilters = Boolean(q) || Boolean(status) || Boolean(category);
 
+  // El catálogo impreso hereda los filtros de la lista, para poder imprimir
+  // una sola categoría en vez de todo.
+  const printParams = new URLSearchParams();
+  if (q) printParams.set("q", q);
+  if (status) printParams.set("status", status);
+  if (category) printParams.set("category", category);
+  const printHref = printParams.size
+    ? `/catalogo-impreso?${printParams.toString()}`
+    : "/catalogo-impreso";
+
   // Los productos con variantes no tienen un price_cents propio (se maneja
   // por variante) — se calcula un rango real para no mostrar $0 en la lista.
   const variantProductIds = products.filter((p) => p.has_variants).map((p) => p.id);
@@ -72,11 +84,18 @@ export default async function ProductosPage({ searchParams }: PageProps) {
         title="Productos"
         description="Administra el catálogo de productos de tu negocio."
         actions={
-          <ProductFormSheet
-            companyId={companyId}
-            businessType={session.activeCompany.business_type}
-            categories={(categories as ProductCategory[]) ?? []}
-          />
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" asChild>
+              <Link href={printHref} target="_blank">
+                <Printer /> Imprimir catálogo
+              </Link>
+            </Button>
+            <ProductFormSheet
+              companyId={companyId}
+              businessType={session.activeCompany.business_type}
+              categories={(categories as ProductCategory[]) ?? []}
+            />
+          </div>
         }
       />
 
