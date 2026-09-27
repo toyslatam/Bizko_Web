@@ -86,6 +86,9 @@ export default async function ProductDetailPage({
     attributesByVariant = groupAttributesByVariant((attrsData as VariantAttribute[]) ?? []);
   }
 
+  const activeVariants = variants.filter((v) => v.status === "active");
+  const showVariantRanges = product.has_variants && activeVariants.length > 0;
+
   const isFoodBusiness = session.activeCompany.business_type === "food";
   let modifierGroups: (ModifierGroup & { modifier_options: ModifierOption[] })[] = [];
   if (isFoodBusiness && !product.is_combo && !product.is_ingredient) {
@@ -171,12 +174,43 @@ export default async function ProductDetailPage({
         </div>
       </div>
 
-      {!product.has_variants && (
-        <div className="mt-6 grid grid-cols-3 gap-3">
-          <Metric label="Precio de venta" value={formatCurrencyCents(product.price_cents)} />
-          <Metric label="Costo" value={formatCurrencyCents(product.cost_cents)} />
-          <Metric label="Margen" value={formatCurrencyCents(margin)} />
-        </div>
+      {/*
+        Con variantes, el precio y el costo viven en cada una: el producto
+        padre los tiene en cero. Se muestra el rango entre las variantes
+        activas para que el bloque siga diciendo algo cierto.
+      */}
+      <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <Metric
+          label="Precio de venta"
+          value={
+            showVariantRanges
+              ? centsRange(activeVariants.map((v) => v.price_cents))
+              : formatCurrencyCents(product.price_cents)
+          }
+        />
+        <Metric
+          label="Costo"
+          value={
+            showVariantRanges
+              ? centsRange(activeVariants.map((v) => v.cost_cents))
+              : formatCurrencyCents(product.cost_cents)
+          }
+        />
+        <Metric
+          label="Margen"
+          value={
+            showVariantRanges
+              ? centsRange(activeVariants.map((v) => v.price_cents - v.cost_cents))
+              : formatCurrencyCents(margin)
+          }
+        />
+      </div>
+
+      {showVariantRanges && (
+        <p className="mt-2 text-xs text-muted-foreground">
+          Rango entre las {activeVariants.length} variantes activas. El detalle de cada una
+          está más abajo.
+        </p>
       )}
 
       <div className="mt-4 grid gap-3 rounded-xl border border-border bg-card p-4 sm:grid-cols-2">
@@ -315,6 +349,15 @@ export default async function ProductDetailPage({
         ) : null)}
     </div>
   );
+}
+
+/** "$ 15.000" o "$ 15.000 – $ 18.000" cuando los valores difieren. */
+function centsRange(values: number[]): string {
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  return max > min
+    ? `${formatCurrencyCents(min)} – ${formatCurrencyCents(max)}`
+    : formatCurrencyCents(min);
 }
 
 function Metric({ label, value }: { label: string; value: string }) {

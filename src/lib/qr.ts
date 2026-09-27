@@ -19,7 +19,6 @@ export function qrPathFor(productId: string, variantId?: string | null): string 
 }
 
 export interface QrLabel {
-  key: string;
   href: string;
   name: string;
   /** "3 variantes" cuando las tiene; vacío si no. */
@@ -35,7 +34,7 @@ export interface QrLabel {
  * en la estantería y llevar cinco stickers en el mismo frasco no tiene
  * sentido. Al escanear, quien vende elige la talla o el color.
  */
-export function buildQrLabels({
+export function buildQrLabel({
   product,
   variants,
   origin,
@@ -43,38 +42,33 @@ export function buildQrLabels({
   product: Product;
   variants: ProductVariant[];
   origin: string;
-}): QrLabel[] {
+}): QrLabel {
   const active = variants.filter((v) => v.status === "active");
+  const href = origin + qrPathFor(product.id);
 
   if (!product.has_variants || active.length === 0) {
-    return [
-      {
-        key: product.id,
-        href: origin + qrPathFor(product.id),
-        name: product.name,
-        detail: "",
-        imageUrl: product.image_url,
-        priceCents: product.price_cents,
-        priceMaxCents: null,
-      },
-    ];
+    return {
+      href,
+      name: product.name,
+      detail: "",
+      imageUrl: product.image_url,
+      priceCents: product.price_cents,
+      priceMaxCents: null,
+    };
   }
 
   const prices = active.map((v) => v.price_cents);
   const min = Math.min(...prices);
   const max = Math.max(...prices);
 
-  return [
-    {
-      key: product.id,
-      href: origin + qrPathFor(product.id),
-      name: product.name,
-      detail: `${active.length} variantes`,
-      imageUrl: product.image_url ?? active[0].image_url,
-      priceCents: min,
-      priceMaxCents: max > min ? max : null,
-    },
-  ];
+  return {
+    href,
+    name: product.name,
+    detail: `${active.length} variantes`,
+    imageUrl: product.image_url ?? active[0].image_url,
+    priceCents: min,
+    priceMaxCents: max > min ? max : null,
+  };
 }
 
 /** Variante seleccionable al confirmar una venta escaneada. */
